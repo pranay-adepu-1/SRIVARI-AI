@@ -59,11 +59,18 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Scheduler shutdown warning: {e}")
 
+docs_url = "/docs" if settings.ENABLE_DOCS else None
+redoc_url = "/redoc" if settings.ENABLE_DOCS else None
+openapi_url = "/openapi.json" if settings.ENABLE_DOCS else None
+
 app = FastAPI(
     title=settings.APP_NAME,
     description="Intelligent bilingual (English & Telugu) Tirumala Devotee Assistant powered by RAG and official TTD data.",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    docs_url=docs_url,
+    redoc_url=redoc_url,
+    openapi_url=openapi_url
 )
 
 # CORS Middleware
@@ -129,12 +136,18 @@ def root(request: Request):
     if "text/html" in accept and devotee_dir and (devotee_dir / "index.html").exists():
         return FileResponse(str(devotee_dir / "index.html"))
 
-    return {
+    resp = {
         "app": "Srivari AI (శ్రీవారి AI)",
         "tagline": "Your Intelligent Tirumala Assistant",
         "official_disclaimer": "Independent devotional informational assistant. Not affiliated with TTD.",
         "devotee_portal": "/portal",
-        "admin_portal": "/admin-ui/",
-        "api_docs": "/docs"
+        "official_sources": [
+            "https://news.tirumala.org/",
+            "https://ttdevasthanams.ap.gov.in/",
+            "https://www.tirumala.org/"
+        ]
     }
+    if settings.ENABLE_DOCS:
+        resp["api_docs"] = "/docs"
+    return resp
 

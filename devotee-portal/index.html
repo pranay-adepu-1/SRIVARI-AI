@@ -3,12 +3,29 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Srivari AI (శ్రీవారి AI) - Tirumala Devotee Assistant</title>
-  <link rel="stylesheet" href="styles.css">
+  <title>Srivari AI (శ్రీవారి AI) - Intelligent Tirumala Devotee Assistant</title>
+  <meta name="description" content="Ask questions in English & Telugu about Tirumala Darshan timings, ₹300 Special Entry, Srivari Seva, Cottages, and get verified official TTD guidance.">
+  <meta name="keywords" content="Tirumala, Tirupati, TTD, Srivari AI, Venkateswara Swamy, Special Entry Darshan, Srivari Seva, Laddu, Tirumala accommodation">
+  <meta name="theme-color" content="#7A0C16">
+
+  <!-- Open Graph / WhatsApp Sharing -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://srivari-ai.onrender.com/portal">
+  <meta property="og:title" content="Srivari AI (శ్రీవారి AI) - Intelligent Tirumala Devotee Assistant">
+  <meta property="og:description" content="Instant bilingual answers for Tirumala darshan, ₹300 tickets, Srivari Seva, and room bookings from verified official TTD sources.">
+  <meta property="og:site_name" content="Srivari AI">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Srivari AI (శ్రీవారి AI) - Intelligent Tirumala Devotee Assistant">
+  <meta name="twitter:description" content="Intelligent bilingual assistant for Tirumala pilgrims powered by official TTD data.">
+
+  <!-- Devotional Typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Mandali&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+  
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
@@ -18,18 +35,27 @@
       <a href="#" class="nav-brand">
         <span class="tilak-icon">॥ శ్రీః ॥</span>
         <div class="brand-text">
-          <h1>Srivari AI (శ్రీవారి AI)</h1>
-          <small>Tirumala Devotee Assistant</small>
+          <h1 id="brand-title">Srivari AI (శ్రీవారి AI)</h1>
+          <small id="brand-tagline">Tirumala Devotee Assistant</small>
         </div>
       </a>
 
       <div class="nav-actions">
-        <button id="lang-toggle" class="btn btn-outline">తెలుగు</button>
+        <!-- BILINGUAL SWITCHER -->
+        <button type="button" id="lang-toggle-btn" class="lang-toggle-btn" aria-label="Switch Language to Telugu or English">
+          <span id="lang-en" class="lang-segment active">English</span>
+          <span class="lang-divider">|</span>
+          <span id="lang-te" class="lang-segment">తెలుగు</span>
+        </button>
+
+        <!-- OFFICIAL TTD PORTAL LINK -->
         <a href="https://ttdevasthanams.ap.gov.in/" target="_blank" rel="noopener" class="btn btn-gold">
-          <span class="material-symbols-outlined" style="font-size: 16px;">open_in_new</span> TTD Official Portal
-        </a>
-        <a href="/admin-ui/" class="btn btn-text">
-          <span class="material-symbols-outlined" style="font-size: 16px;">admin_panel_settings</span> Admin
+          <svg class="svg-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <line x1="10" y1="14" x2="21" y2="3"></line>
+          </svg>
+          <span id="btn-ttd-label">TTD Official Portal</span>
         </a>
       </div>
     </div>
@@ -37,7 +63,7 @@
 
   <!-- DISCLAIMER BANNER -->
   <div class="disclaimer-banner">
-    ⚠️ <strong>Devotee Notice:</strong> Srivari AI is an independent informational guide and is <strong>not</strong> officially affiliated with TTD. All bookings must be completed directly on <a href="https://ttdevasthanams.ap.gov.in/" target="_blank" rel="noopener">ttdevasthanams.ap.gov.in</a>.
+    ⚠️ <strong id="disclaimer-tag">Devotee Notice:</strong> <span id="disclaimer-text">Srivari AI is an independent informational guide and is <strong>not</strong> officially affiliated with TTD. All bookings must be completed directly on <a href="https://ttdevasthanams.ap.gov.in/" target="_blank" rel="noopener">ttdevasthanams.ap.gov.in</a>.</span>
   </div>
 
   <!-- MAIN CONTAINER -->
@@ -46,107 +72,216 @@
     <!-- HERO TITLE -->
     <div class="hero-section">
       <div class="hero-namam">॥ ॐ నమో వేంకటేశాయ ॥</div>
-      <h2 class="hero-title">Welcome to <span>Srivari AI</span></h2>
-      <p class="hero-subtitle">
+      <h2 class="hero-title" id="hero-title">Welcome to <span>Srivari AI</span></h2>
+      <p class="hero-subtitle" id="hero-subtitle">
         Your intelligent guide for Lord Venkateswara Darshan timings, ₹300 tickets, Srivari Seva registration, Tirumala cottages, and official announcements.
       </p>
     </div>
 
-    <!-- MAIN GRID (Chat on Left, Official Feed on Right) -->
+    <!-- MAIN GRID (Chat on Left, Official Feed & Guides on Right) -->
     <div class="content-grid">
       
       <!-- CHAT COLUMN -->
-      <div class="chat-card">
+      <section class="chat-card" aria-label="Devotional AI Assistant">
         <div class="chat-header">
           <div class="chat-header-info">
-            <span class="material-symbols-outlined" style="color: var(--gold);">auto_awesome</span>
+            <span class="guide-card-icon" aria-hidden="true">
+              <svg class="svg-icon" viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                <path d="M12 2L9.5 7.5 4 10l5.5 2.5L12 18l2.5-5.5L20 10l-5.5-2.5L12 2zm7 13l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15zm0-13l-1.25 2.75L15 6l2.75 1.25L19 10l1.25-2.75L23 6l-2.75-1.25L19 2z"/>
+              </svg>
+            </span>
             <div>
-              <h3>Ask Srivari Devotional Assistant</h3>
-              <small style="color: var(--text-muted); font-size: 0.75rem;">Verified TTD Data & RAG Engine</small>
+              <h3 id="chat-header-title">Ask Srivari Devotional Assistant</h3>
+              <small id="chat-header-sub">Verified TTD Data & RAG Engine</small>
             </div>
           </div>
-          <span class="badge-live">● Live Online</span>
+          <span class="badge-live"><span class="live-dot"></span> Live Online</span>
         </div>
 
-        <div id="chat-messages" class="chat-messages">
+        <div id="chat-messages" class="chat-messages" role="log" aria-live="polite">
           <div class="msg assistant">
-            <div class="msg-bubble">
+            <div class="msg-bubble" id="welcome-message-bubble">
               <strong>Om Namo Venkatesaya! (ఓం నమో వేంకటేశాయ!)</strong><br><br>
               Welcome to Srivari AI. How may I assist your pilgrimage today? You can ask questions in English or Telugu regarding ₹300 Special Entry Darshan, free Sarva Darshan tokens, Srivari Seva voluntary service, room bookings, laddu prasadam, or dress code.
             </div>
           </div>
         </div>
 
-        <!-- Quick Questions Chips -->
-        <div id="quick-chips" class="quick-chips-wrapper">
-          <!-- Dynamically populated -->
+        <!-- QUICK QUESTIONS CHIPS (Statically rendered in HTML) -->
+        <div id="quick-chips" class="quick-chips-wrapper" aria-label="Suggested Questions">
+          <button type="button" class="chip-btn" data-query="What are the rules and timings for ₹300 Special Entry Darshan?">
+            ₹300 Darshan Timings
+          </button>
+          <button type="button" class="chip-btn" data-query="How to register for Srivari Seva voluntary service?">
+            Srivari Seva Registration
+          </button>
+          <button type="button" class="chip-btn" data-query="What is the dress code for Tirumala darshan?">
+            Dress Code Rules
+          </button>
+          <button type="button" class="chip-btn" data-query="How does accommodation checkout deposit refund work?">
+            Room Booking Rules
+          </button>
         </div>
 
-        <!-- Chat Input Bar -->
+        <!-- CHAT INPUT BAR (Statically rendered in HTML) -->
         <form id="chat-form" class="chat-input-bar">
-          <input type="text" id="chat-input" placeholder="Ask in English or Telugu (e.g. ₹300 darshan rules)..." autocomplete="off" required>
+          <input 
+            type="text" 
+            id="chat-input" 
+            placeholder="Ask in English or Telugu (e.g. ₹300 darshan rules)..." 
+            autocomplete="off" 
+            aria-label="Ask Srivari AI a question"
+            required
+          >
           <button type="submit" id="btn-send" class="btn btn-gold">
-            <span class="material-symbols-outlined">send</span> Ask
+            <svg class="svg-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+              <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+            </svg>
+            <span id="btn-send-label">Ask</span>
           </button>
         </form>
-      </div>
+      </section>
 
-      <!-- SIDE PANEL (Announcements & Guidelines) -->
-      <div class="side-panel">
+      <!-- SIDE PANEL (Announcements & Interactive Guides) -->
+      <aside class="side-panel">
         
         <!-- Announcements Feed -->
-        <div class="panel-card">
+        <section class="panel-card" aria-label="Official Announcements">
           <div class="panel-card-header">
-            <h3><span class="material-symbols-outlined">campaign</span> Official TTD Announcements</h3>
-            <span style="font-size: 0.72rem; color: var(--gold);">Auto-Synced</span>
+            <h3 id="panel-ann-title">
+              <svg class="svg-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+              </svg>
+              <span>Official TTD Announcements</span>
+            </h3>
+            <span class="sync-badge">Auto-Synced</span>
           </div>
+
+          <!-- SKELETON LOADER (Replaced dynamically via JS on load) -->
           <div id="announcements-list" class="announcements-list">
-            <p style="color: var(--text-muted); font-size: 0.85rem;">Loading verified announcements...</p>
+            <div class="skeleton-card">
+              <div class="skeleton-line short"></div>
+              <div class="skeleton-line full"></div>
+              <div class="skeleton-line medium"></div>
+            </div>
+            <div class="skeleton-card">
+              <div class="skeleton-line short"></div>
+              <div class="skeleton-line full"></div>
+              <div class="skeleton-line medium"></div>
+            </div>
+            <div class="skeleton-card">
+              <div class="skeleton-line short"></div>
+              <div class="skeleton-line full"></div>
+              <div class="skeleton-line medium"></div>
+            </div>
           </div>
-        </div>
+        </section>
 
-        <!-- Quick Devotee Guidelines -->
-        <div class="panel-card">
+        <!-- INTERACTIVE QUICK PILGRIMAGE GUIDES -->
+        <section class="panel-card" aria-label="Interactive Quick Guides">
           <div class="panel-card-header">
-            <h3><span class="material-symbols-outlined">info</span> Quick Pilgrimage Guides</h3>
+            <h3 id="panel-guides-title">
+              <svg class="svg-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+              </svg>
+              <span>Quick Pilgrimage Guides</span>
+            </h3>
           </div>
-          <div class="guides-grid">
-            <div class="guide-pill">
-              <strong>₹300 Darshan (SED)</strong>
-              <span>Online booking mandatory; Traditional attire required.</span>
-            </div>
-            <div class="guide-pill">
-              <strong>Srivari Seva</strong>
-              <span>Voluntary service (Ages 18-60); 100% free registration.</span>
-            </div>
-            <div class="guide-pill">
-              <strong>Accommodation</strong>
-              <span>Max 24-hr stay; Caution deposit auto-refunded to bank.</span>
-            </div>
-            <div class="guide-pill">
-              <strong>Dress Code</strong>
-              <span>Men: Dhoti/Pyjama; Women: Saree/Chudidar with Dupatta.</span>
-            </div>
-          </div>
-        </div>
 
-      </div>
+          <div class="guides-grid">
+            <!-- Card 1: SED -->
+            <button type="button" class="guide-card-btn" data-guide="sed" aria-label="Ask about ₹300 Special Entry Darshan">
+              <div>
+                <div class="guide-card-header">
+                  <span class="guide-card-icon" aria-hidden="true">
+                    <svg class="svg-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 2L2 9h20L12 2z"></path>
+                      <path d="M4 9v11h16V9"></path>
+                      <path d="M9 20V14h6v6"></path>
+                      <circle cx="12" cy="5" r="1"></circle>
+                    </svg>
+                  </span>
+                  <strong class="guide-title">₹300 Darshan (SED)</strong>
+                </div>
+                <span class="guide-desc">Online booking mandatory; Traditional attire required.</span>
+              </div>
+              <div class="guide-card-action">Ask Assistant →</div>
+            </button>
+
+            <!-- Card 2: Seva -->
+            <button type="button" class="guide-card-btn" data-guide="seva" aria-label="Ask about Srivari Seva voluntary service">
+              <div>
+                <div class="guide-card-header">
+                  <span class="guide-card-icon" aria-hidden="true">
+                    <svg class="svg-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 3c-1.5 2-3 4.5-3 7 0 2.2 1.3 4 3 4s3-1.8 3-4c0-2.5-1.5-5-3-7z"></path>
+                      <path d="M6 10c0 3 2 5.5 4 6.5"></path>
+                      <path d="M18 10c0 3-2 5.5-4 6.5"></path>
+                      <path d="M4 17c2 2 5 3 8 3s6-1 8-3"></path>
+                    </svg>
+                  </span>
+                  <strong class="guide-title">Srivari Seva</strong>
+                </div>
+                <span class="guide-desc">Voluntary service (Ages 18-60); 100% free registration.</span>
+              </div>
+              <div class="guide-card-action">Ask Assistant →</div>
+            </button>
+
+            <!-- Card 3: Accommodation -->
+            <button type="button" class="guide-card-btn" data-guide="accommodation" aria-label="Ask about Tirumala room bookings">
+              <div>
+                <div class="guide-card-header">
+                  <span class="guide-card-icon" aria-hidden="true">
+                    <svg class="svg-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M2 4v16"></path>
+                      <path d="M2 8h18a2 2 0 0 1 2 2v10"></path>
+                      <path d="M2 17h20"></path>
+                      <path d="M6 8v9"></path>
+                    </svg>
+                  </span>
+                  <strong class="guide-title">Accommodation</strong>
+                </div>
+                <span class="guide-desc">Max 24-hr stay; Caution deposit auto-refunded to bank.</span>
+              </div>
+              <div class="guide-card-action">Ask Assistant →</div>
+            </button>
+
+            <!-- Card 4: Dress Code -->
+            <button type="button" class="guide-card-btn" data-guide="dresscode" aria-label="Ask about traditional dress code rules">
+              <div>
+                <div class="guide-card-header">
+                  <span class="guide-card-icon" aria-hidden="true">
+                    <svg class="svg-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M20.38 3.46L16 2 12 5.5 8 2l-4.38 1.46a2 2 0 0 0-1.34 1.76l-.28 8.78a2 2 0 0 0 1.25 1.88l3.75 1.5V22h8v-4.62l3.75-1.5a2 2 0 0 0 1.25-1.88l-.28-8.78a2 2 0 0 0-1.34-1.76z"></path>
+                    </svg>
+                  </span>
+                  <strong class="guide-title">Dress Code</strong>
+                </div>
+                <span class="guide-desc">Men: Dhoti/Pyjama; Women: Saree/Chudidar with Dupatta.</span>
+              </div>
+              <div class="guide-card-action">Ask Assistant →</div>
+            </button>
+          </div>
+        </section>
+
+      </aside>
 
     </div>
 
   </main>
 
-  <!-- FOOTER -->
+  <!-- FOOTER (Public links only; No admin or docs links) -->
   <footer class="portal-footer">
     <div class="footer-links">
       <a href="https://ttdevasthanams.ap.gov.in/" target="_blank" rel="noopener">Official TTD Portal</a>
       <a href="https://news.tirumala.org/" target="_blank" rel="noopener">TTD News</a>
       <a href="https://www.tirumala.org/" target="_blank" rel="noopener">Tirumala Info</a>
-      <a href="/admin-ui/">Temple Administrator Portal</a>
-      <a href="/docs">REST API Documentation</a>
       <a href="https://github.com/pranay-adepu-1/SRIVARI-AI" target="_blank" rel="noopener">GitHub Project</a>
     </div>
-    <p class="footer-disclaimer">
+    <p class="footer-disclaimer" id="footer-disclaimer-text">
       Srivari AI (శ్రీవారి AI) is an independent non-commercial informational tool built to help pilgrims navigate official temple guidelines. It has no official affiliation with Tirumala Tirupati Devasthanams (TTD). Official darshan tickets, accommodation, and arjitha seva tokens must be booked strictly on <a href="https://ttdevasthanams.ap.gov.in/" target="_blank" rel="noopener" style="color: var(--gold);">ttdevasthanams.ap.gov.in</a>.
     </p>
   </footer>
@@ -154,4 +289,3 @@
   <script src="app.js"></script>
 </body>
 </html>
-

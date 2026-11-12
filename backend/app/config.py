@@ -12,6 +12,7 @@ class Settings:
     HOST: str = os.getenv("HOST", "0.0.0.0")
     PORT: int = int(os.getenv("PORT", "8000"))
     API_V1_PREFIX: str = os.getenv("API_V1_PREFIX", "/api/v1")
+    ENABLE_DOCS: bool = os.getenv("ENABLE_DOCS", "false" if os.getenv("APP_ENV", os.getenv("APP", "development")).lower() == "production" else "true").lower() in ("true", "1")
 
     # Security
     SECRET_KEY: str = os.getenv("SECRET_KEY", "dev_srivari_ai_secret_key_tirumala_balaji_777_change_in_prod")
