@@ -1,11 +1,23 @@
 import uuid
-from datetime import datetime
+import secrets
+from datetime import datetime, timedelta
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+
+try:
+    import bcrypt
+    if not hasattr(bcrypt, '__about__'):
+        bcrypt.__about__ = type('About', (), {'__version__': getattr(bcrypt, '__version__', '4.1.2')})()
+except ImportError:
+    pass
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from app.database.session import get_db
-from app.api.deps import get_current_admin
+from app.api.deps import require_admin, get_current_admin
+from app.config import settings
+from app.security.rate_limiter import admin_login_rate_limiter
 from app.models.admin import Admin
 from app.models.announcement import Announcement, AnnouncementCategory
 from app.models.user import User
@@ -22,6 +34,121 @@ from app.notifications.fcm_service import FCMNotificationService
 from app.services.audit_service import AuditService
 
 router = APIRouter(prefix="/admin", tags=["Admin Portal"])
+
+class AdminLoginPayload(BaseModel):
+    username: str
+    password: str
+
+def verify_admin_credentials(username_input: str, password_input: str) -> bool:
+    """
+    Verifies admin credentials using secrets.compare_digest and passlib / bcrypt.
+    """
+    # 1. Constant-time comparison for username
+    if not secrets.compare_digest(username_input.strip(), settings.ADMIN_USERNAME):
+        return False
+
+    # 2. Verify password with bcrypt hash from settings
+    expected_hash = settings.get_admin_password_hash()
+    if not expected_hash:
+        return False
+
+    # Try passlib CryptContext first
+    try:
+        from passlib.context import CryptContext
+        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+        if pwd_context.verify(password_input, expected_hash):
+            return True
+    except Exception:
+        pass
+
+    # Direct native bcrypt verification fallback
+    try:
+        import bcrypt
+        return bcrypt.checkpw(password_input.encode("utf-8"), expected_hash.encode("utf-8"))
+    except Exception:
+        return False
+
+@router.post("/login")
+def admin_login(
+    payload: AdminLoginPayload,
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db)
+):
+    """
+    Authenticates administrator using secrets.compare_digest and passlib/bcrypt.
+    Rate-limits failed attempts (max 5 per 15 min per IP).
+    Sets an HttpOnly, SameSite=Lax, Secure=True cookie (srivari_admin_token, 8-hour expiry).
+    """
+    client_ip = request.client.host if request.client else "127.0.0.1"
+
+    # Rate-limit check on failed attempts (max 5 per 15 min per IP)
+    if admin_login_rate_limiter.is_blocked(client_ip):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Rate limit exceeded: Maximum 5 failed attempts per 15 minutes. Please try again later."
+        )
+
+    if not verify_admin_credentials(payload.username, payload.password):
+        admin_login_rate_limiter.record_failure(client_ip)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid administrator credentials. Please check your username and password."
+        )
+
+    # Success: clear failed attempts
+    admin_login_rate_limiter.record_success(client_ip)
+
+    # Issue 8-hour JWT token
+    from jose import jwt
+    expires_at = datetime.utcnow() + timedelta(hours=8)
+    token_data = {
+        "sub": settings.ADMIN_USERNAME,
+        "username": settings.ADMIN_USERNAME,
+        "role": "super_admin",
+        "exp": expires_at
+    }
+    token = jwt.encode(token_data, settings.JWT_SECRET_KEY, algorithm="HS256")
+
+    # Set HttpOnly, SameSite=Lax, Secure=True cookie (srivari_admin_token, 8-hour expiry)
+    response.set_cookie(
+        key="srivari_admin_token",
+        value=token,
+        max_age=8 * 3600,
+        expires=8 * 3600,
+        httponly=True,
+        samesite="lax",
+        secure=True,
+        path="/"
+    )
+
+    return {
+        "status": "success",
+        "message": "Signed in successfully as Administrator",
+        "username": settings.ADMIN_USERNAME,
+        "access_token": token,
+        "token_type": "bearer"
+    }
+
+@router.post("/logout")
+def admin_logout(response: Response):
+    """
+    Clears the srivari_admin_token session cookie.
+    """
+    response.delete_cookie(key="srivari_admin_token", path="/")
+    return {"status": "success", "message": "Logged out successfully"}
+
+@router.get("/session")
+def admin_session_check(admin: Admin = Depends(require_admin)):
+    """
+    Validates current admin session cookie and returns profile details.
+    """
+    return {
+        "authenticated": True,
+        "username": admin.username,
+        "full_name": admin.full_name,
+        "role": admin.role
+    }
 
 @router.get("/dashboard-stats")
 def get_dashboard_stats(

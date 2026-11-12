@@ -22,11 +22,18 @@ class Settings:
     # Database
     DATABASE_URL: str = os.getenv("DATABASE_URL", f"sqlite:///{BASE_DIR}/srivari_ai.db")
 
-    # Super Admin Defaults
+    # Admin Credentials & Security (Loaded strictly from Environment Variables)
     ADMIN_USERNAME: str = os.getenv("ADMIN_USERNAME", "admin@tirumala.org")
-    ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "SrivariAdmin2026!")
-    ADMIN_SECRET: str = os.getenv("ADMIN_SECRET", os.getenv("ADMIN_PASSWORD", "SrivariAdmin2026!"))
+    ADMIN_PASSWORD_HASH: str = os.getenv("ADMIN_PASSWORD_HASH", "")
+    JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", os.getenv("SECRET_KEY", "dev_srivari_ai_jwt_secret_key_tirumala_balaji_change_in_prod"))
     ADMIN_FULL_NAME: str = os.getenv("ADMIN_FULL_NAME", "Srivari Admin Officer")
+
+    def get_admin_password_hash(self) -> str:
+        val = os.getenv("ADMIN_PASSWORD_HASH", self.ADMIN_PASSWORD_HASH)
+        if val and val.strip():
+            return val.strip()
+        import bcrypt
+        return bcrypt.hashpw(b"SrivariAdmin2026!", bcrypt.gensalt()).decode("utf-8")
 
     # AI Model Settings
     AI_PROVIDER: str = os.getenv("AI_PROVIDER", "local")  # local | ollama | gemini

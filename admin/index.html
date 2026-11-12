@@ -17,41 +17,40 @@
     <div class="login-card">
       <div class="login-header">
         <div class="tilak-symbol">॥ ॐ నమో వేంకటేశాయ ॥</div>
-        <h1>Srivari AI</h1>
-        <p class="subtitle">శ్రీవారి AI - Devotee Assistant Admin Portal</p>
+        <h1>Srivari AI Admin Login</h1>
+        <p class="subtitle">శ్రీవారి AI - Authorized Administrative Personnel Only</p>
       </div>
+
+      <div id="login-error" class="error-badge hidden" role="alert"></div>
 
       <form id="login-form">
         <div class="input-group">
-          <label for="username">Admin Username</label>
+          <label for="username">Username</label>
           <div class="input-with-icon">
             <span class="material-symbols-outlined">person</span>
-            <input type="text" id="username" value="admin@tirumala.org" required>
+            <input type="text" id="username" placeholder="e.g. admin@tirumala.org" required autocomplete="username">
           </div>
         </div>
 
         <div class="input-group">
           <label for="password">Password</label>
-          <div class="input-with-icon">
+          <div class="input-with-icon" style="position: relative;">
             <span class="material-symbols-outlined">lock</span>
-            <input type="password" id="password" value="SrivariAdmin2026!" required>
+            <input type="password" id="password" placeholder="Enter administrative password" required autocomplete="current-password" style="padding-right: 44px;">
+            <button type="button" id="btn-toggle-password" class="password-toggle-btn" title="Toggle password visibility" aria-label="Show or hide password">
+              <span class="material-symbols-outlined" id="toggle-password-icon">visibility</span>
+            </button>
           </div>
         </div>
 
-        <div id="login-error" class="error-badge hidden"></div>
-
-        <button type="submit" class="btn btn-primary btn-block">
-          <span class="material-symbols-outlined">login</span> Authenticate
-        </button>
-
-        <button type="button" id="btn-quick-access" class="btn btn-secondary btn-block" style="margin-top: 10px; background: rgba(212, 175, 55, 0.15); border: 1px solid #D4AF37; color: #D4AF37; display: flex; align-items: center; justify-content: center; gap: 6px;">
-          <span class="material-symbols-outlined">bolt</span> One-Click Admin Access (No Credentials Needed)
+        <button type="submit" id="btn-sign-in" class="btn btn-primary btn-block">
+          <span class="material-symbols-outlined">login</span> Sign In
         </button>
       </form>
 
       <div class="disclaimer-mini">
         <span class="material-symbols-outlined">security</span>
-        Authorized Administrative Personnel Only. Strictly Independent Informational Assistant.
+        Protected administrative portal. Rate limited to 5 failed attempts per 15 minutes.
       </div>
     </div>
   </div>
@@ -122,6 +121,9 @@
           <div class="status-indicator">
             <span class="dot live"></span> Backend Online
           </div>
+          <button id="btn-header-logout" class="btn btn-outline btn-sm" title="Sign Out of Admin Portal">
+            <span class="material-symbols-outlined">logout</span> Logout
+          </button>
         </div>
       </header>
 

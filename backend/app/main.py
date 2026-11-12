@@ -106,6 +106,7 @@ app.include_router(darshan_router, prefix=api_prefix)
 app.include_router(notifications_router, prefix=api_prefix)
 app.include_router(users_router, prefix=api_prefix)
 app.include_router(admin_router, prefix=api_prefix)
+app.include_router(admin_router)  # Direct /admin/* routes (login, logout, session, etc.)
 app.include_router(system_router, prefix=api_prefix)
 
 # Mount Admin Dashboard UI

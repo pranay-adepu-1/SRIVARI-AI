@@ -44,3 +44,4 @@ class RAGTestResponse(BaseModel):
     query: str
     total_retrieved: int
     results: List[RAGChunkResult]
+

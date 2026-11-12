@@ -21,12 +21,15 @@ class SrivariAITestSuite(unittest.TestCase):
 
     def test_admin_portal_suite(self):
         suite = TestAdminPortalSecurityAndFeatures()
-        suite.test_admin_login_rate_limiter()
+        suite.test_verify_admin_credentials()
+        suite.test_admin_login_rate_limiter_failed_attempts()
         suite.test_admin_auth_missing_credentials_raises_401()
         suite.test_admin_auth_invalid_token_raises_401()
-        suite.test_admin_auth_master_secret_succeeds()
+        suite.test_admin_auth_valid_srivari_admin_token_succeeds()
+        suite.test_admin_login_endpoint_sets_cookie()
+        suite.test_admin_logout_endpoint_clears_cookie()
         suite.test_knowledge_document_chunking_and_rag_search()
-        print("✓ Admin Portal Security, Rate Limiter & RAG Retrieval Tests Passed")
+        print("✓ Admin Portal Security, Rate Limiter, Bcrypt Auth & Cookie Guard Tests Passed")
 
     def test_guardrails_suite(self):
         test_language_detection()

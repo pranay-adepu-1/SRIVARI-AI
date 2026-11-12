@@ -28,22 +28,28 @@ rate_limiter = RateLimiter()
 class AdminLoginRateLimiter:
     """
     Sliding window rate limiter for administrative login endpoint.
-    Restricts login attempts to 5 attempts per 15 minutes (900 seconds) per IP.
+    Restricts failed login attempts to max 5 per 15 minutes (900 seconds) per IP.
     """
     def __init__(self, max_attempts: int = 5, window_seconds: int = 900):
         self.max_attempts = max_attempts
         self.window_seconds = window_seconds
         self.attempts = defaultdict(list)
 
-    def is_allowed(self, client_id: str) -> bool:
+    def is_blocked(self, client_id: str) -> bool:
         current_time = time.time()
         window_start = current_time - self.window_seconds
-        # Clean up timestamps older than the 15-minute sliding window
         self.attempts[client_id] = [t for t in self.attempts[client_id] if t > window_start]
-        if len(self.attempts[client_id]) >= self.max_attempts:
-            return False
+        return len(self.attempts[client_id]) >= self.max_attempts
+
+    def is_allowed(self, client_id: str) -> bool:
+        return not self.is_blocked(client_id)
+
+    def record_failure(self, client_id: str):
+        current_time = time.time()
         self.attempts[client_id].append(current_time)
-        return True
+
+    def record_success(self, client_id: str):
+        self.attempts.pop(client_id, None)
 
 admin_login_rate_limiter = AdminLoginRateLimiter(max_attempts=5, window_seconds=900)
 

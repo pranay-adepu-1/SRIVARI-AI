@@ -173,6 +173,26 @@ h1, h2, h3, .tilak-symbol, .brand-namam {
   box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
 }
 
+.password-toggle-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  transition: color 0.2s ease;
+}
+
+.password-toggle-btn:hover {
+  color: var(--maroon-primary);
+}
+
 .error-badge {
   background: #FFEBEE;
   color: var(--danger-color);

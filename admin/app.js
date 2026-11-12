@@ -3,8 +3,7 @@ const API_BASE = window.location.origin.includes(':8000')
   ? 'http://localhost:8000/api/v1' 
   : `${window.location.origin}/api/v1`;
 
-let authToken = localStorage.getItem('srivari_admin_token') || null;
-let currentAdmin = JSON.parse(localStorage.getItem('srivari_admin_user') || 'null');
+let currentAdmin = null;
 let categoriesCache = [];
 
 // DOM Elements
@@ -12,7 +11,13 @@ const loginContainer = document.getElementById('login-container');
 const appContainer = document.getElementById('app-container');
 const loginForm = document.getElementById('login-form');
 const loginError = document.getElementById('login-error');
+const btnSignIn = document.getElementById('btn-sign-in');
+const btnTogglePassword = document.getElementById('btn-toggle-password');
+const togglePasswordIcon = document.getElementById('toggle-password-icon');
+const passwordInput = document.getElementById('password');
+
 const btnLogout = document.getElementById('btn-logout');
+const btnHeaderLogout = document.getElementById('btn-header-logout');
 const btnQuickSync = document.getElementById('btn-quick-sync');
 const btnTriggerScraper = document.getElementById('btn-trigger-scraper');
 const modal = document.getElementById('announcement-modal');
@@ -58,23 +63,20 @@ function showToast(message, type = 'info', duration = 4000) {
   }, duration);
 }
 
-// CENTRALIZED FETCH HELPER
+// CENTRALIZED FETCH HELPER WITH credentials: "same-origin"
 async function adminFetch(url, options = {}) {
   const headers = { ...(options.headers || {}) };
-  if (authToken && !headers['Authorization']) {
-    headers['Authorization'] = `Bearer ${authToken}`;
-  }
 
   const config = {
     ...options,
     headers,
-    credentials: 'include'
+    credentials: 'same-origin'
   };
 
   try {
     const res = await fetch(url, config);
     if (res.status === 401) {
-      showToast('Administrative session expired or unauthorized. Please re-authenticate.', 'error');
+      showToast('Administrative session expired or unauthorized. Please sign in.', 'error');
       showLogin();
       throw new Error('Unauthorized');
     }
@@ -90,98 +92,119 @@ async function adminFetch(url, options = {}) {
 // INITIALIZATION
 document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
-
-  if (authToken && currentAdmin) {
-    showDashboard();
-  } else {
-    showLogin();
-  }
+  checkAdminSession();
 });
 
+async function checkAdminSession() {
+  try {
+    // Try both root /admin/session and prefixed /api/v1/admin/session
+    let res = await fetch('/admin/session', { credentials: 'same-origin' });
+    if (!res.ok) {
+      res = await fetch(`${API_BASE}/admin/session`, { credentials: 'same-origin' });
+    }
+    if (res.ok) {
+      const data = await res.json();
+      currentAdmin = data;
+      showDashboard();
+      return;
+    }
+  } catch (err) {
+    console.debug('No active admin session found:', err);
+  }
+  showLogin();
+}
+
 function setupEventListeners() {
-  // Login Form
+  // Password Visibility Show / Hide Toggle
+  if (btnTogglePassword && passwordInput) {
+    btnTogglePassword.addEventListener('click', () => {
+      const isPassword = passwordInput.type === 'password';
+      passwordInput.type = isPassword ? 'text' : 'password';
+      togglePasswordIcon.textContent = isPassword ? 'visibility_off' : 'visibility';
+    });
+  }
+
+  // Admin Login Form
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     loginError.classList.add('hidden');
+    loginError.textContent = '';
+
     const username = document.getElementById('username').value.trim();
     const password = document.getElementById('password').value;
 
+    if (!username || !password) {
+      loginError.textContent = 'Please enter both username and password.';
+      loginError.classList.remove('hidden');
+      return;
+    }
+
+    btnSignIn.disabled = true;
+    const originalText = btnSignIn.innerHTML;
+    btnSignIn.innerHTML = '<span class="material-symbols-outlined">hourglass_top</span> Signing in...';
+
     try {
-      const res = await fetch(`${API_BASE}/auth/admin-login`, {
+      // Try root /admin/login first, then API_BASE /admin/login
+      let res = await fetch('/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        credentials: 'same-origin',
         body: JSON.stringify({ username, password })
       });
 
+      if (res.status === 404) {
+        res = await fetch(`${API_BASE}/admin/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ username, password })
+        });
+      }
+
       if (res.status === 429) {
-        throw new Error('Rate limit exceeded: 5 failed attempts reached. Please wait 15 minutes.');
+        throw new Error('Rate limit exceeded: Maximum 5 failed attempts per 15 minutes reached. Please try again later.');
       }
 
       if (!res.ok) {
-        throw new Error('Invalid administrative credentials.');
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.detail || 'Invalid administrator username or password.');
       }
 
       const data = await res.json();
-      authToken = data.access_token;
-      currentAdmin = data.admin;
-      localStorage.setItem('srivari_admin_token', authToken);
-      localStorage.setItem('srivari_admin_user', JSON.stringify(currentAdmin));
-      showToast('Authenticated successfully as Admin Officer.', 'success');
+      currentAdmin = {
+        username: data.username || username,
+        full_name: 'Srivari Admin Officer',
+        role: 'super_admin'
+      };
+
+      showToast('Signed in successfully as Administrator.', 'success');
       showDashboard();
     } catch (err) {
       loginError.textContent = err.message || 'Authentication failed.';
       loginError.classList.remove('hidden');
       showToast(err.message || 'Authentication failed.', 'error');
+    } finally {
+      btnSignIn.disabled = false;
+      btnSignIn.innerHTML = originalText;
     }
   });
 
-  // One-Click Admin Quick Access (No Credentials Required)
-  const btnQuickAccess = document.getElementById('btn-quick-access');
-  if (btnQuickAccess) {
-    btnQuickAccess.addEventListener('click', async () => {
-      loginError.classList.add('hidden');
-      btnQuickAccess.disabled = true;
-      const originalHTML = btnQuickAccess.innerHTML;
-      btnQuickAccess.innerHTML = '<span class="material-symbols-outlined">hourglass_top</span> Entering Dashboard...';
-      try {
-        const res = await fetch(`${API_BASE}/auth/admin-quick-access`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include'
-        });
-        if (!res.ok) throw new Error('Quick access endpoint failed.');
-        const data = await res.json();
-        authToken = data.access_token;
-        currentAdmin = data.admin;
-        localStorage.setItem('srivari_admin_token', authToken);
-        localStorage.setItem('srivari_admin_user', JSON.stringify(currentAdmin));
-        showToast('Entered Admin Portal successfully.', 'success');
-        showDashboard();
-      } catch (err) {
-        // Fallback: auto-fill default admin credentials and submit login form
-        document.getElementById('username').value = 'admin@tirumala.org';
-        document.getElementById('password').value = 'SrivariAdmin2026!';
-        loginForm.dispatchEvent(new Event('submit', { cancelable: true }));
-      } finally {
-        btnQuickAccess.disabled = false;
-        btnQuickAccess.innerHTML = originalHTML;
-      }
-    });
-  }
-
-  // Logout
-  btnLogout.addEventListener('click', async () => {
+  // Logout Handlers (Sidebar button & Header button)
+  const handleLogout = async () => {
     try {
-      await fetch(`${API_BASE}/auth/admin-logout`, { method: 'POST', credentials: 'include' });
-    } catch (e) {}
-    localStorage.removeItem('srivari_admin_token');
-    localStorage.removeItem('srivari_admin_user');
-    authToken = null;
+      await fetch('/admin/logout', { method: 'POST', credentials: 'same-origin' });
+    } catch (e) {
+      try {
+        await fetch(`${API_BASE}/admin/logout`, { method: 'POST', credentials: 'same-origin' });
+      } catch (err) {}
+    }
     currentAdmin = null;
-    showToast('Logged out of Admin Portal.', 'info');
+    showToast('Signed out of Admin Portal.', 'info');
     showLogin();
-  });
+  };
+
+  if (btnLogout) btnLogout.addEventListener('click', handleLogout);
+  if (btnHeaderLogout) btnHeaderLogout.addEventListener('click', handleLogout);
 
   // Navigation Tabs
   document.querySelectorAll('.nav-item').forEach(btn => {
@@ -192,25 +215,30 @@ function setupEventListeners() {
   });
 
   // Quick Scraper Sync
-  btnQuickSync.addEventListener('click', runScraperSync);
-  btnTriggerScraper.addEventListener('click', runScraperSync);
+  if (btnQuickSync) btnQuickSync.addEventListener('click', runScraperSync);
+  if (btnTriggerScraper) btnTriggerScraper.addEventListener('click', runScraperSync);
 
   // Announcement Search
   let searchTimeout;
-  announcementSearch.addEventListener('input', () => {
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => {
-      loadAnnouncementsTable(announcementSearch.value);
-    }, 300);
-  });
+  if (announcementSearch) {
+    announcementSearch.addEventListener('input', () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        loadAnnouncementsTable(announcementSearch.value);
+      }, 300);
+    });
+  }
 
   // Add Announcement Button
-  document.getElementById('btn-add-announcement').addEventListener('click', () => {
-    openModalForCreate();
-  });
+  const btnAddAnnouncement = document.getElementById('btn-add-announcement');
+  if (btnAddAnnouncement) {
+    btnAddAnnouncement.addEventListener('click', () => {
+      openModalForCreate();
+    });
+  }
 
   // Announcement Form Submit
-  announcementForm.addEventListener('submit', handleAnnouncementSubmit);
+  if (announcementForm) announcementForm.addEventListener('submit', handleAnnouncementSubmit);
 
   // Knowledge Base Document Controls
   if (btnUploadDoc) btnUploadDoc.addEventListener('click', openDocModal);
@@ -254,15 +282,18 @@ function setupEventListeners() {
   });
 
   // Notification Broadcast Form Submit
-  document.getElementById('notification-form').addEventListener('submit', handleNotificationBroadcast);
+  const notifForm = document.getElementById('notification-form');
+  if (notifForm) notifForm.addEventListener('submit', handleNotificationBroadcast);
 
   // Test AI Chat Form Submit
-  document.getElementById('test-chat-form').addEventListener('submit', handleTestChat);
+  const testChatForm = document.getElementById('test-chat-form');
+  if (testChatForm) testChatForm.addEventListener('submit', handleTestChat);
 }
 
 function showLogin() {
   loginContainer.classList.remove('hidden');
   appContainer.classList.add('hidden');
+  if (passwordInput) passwordInput.value = '';
 }
 
 function showDashboard() {
@@ -326,7 +357,7 @@ async function loadDashboardStats() {
 // CATEGORIES
 async function loadCategories() {
   try {
-    const res = await fetch(`${API_BASE}/announcements/categories`, { credentials: 'include' });
+    const res = await fetch(`${API_BASE}/announcements/categories`, { credentials: 'same-origin' });
     categoriesCache = await res.json();
     const select = document.getElementById('modal-category');
     select.innerHTML = categoriesCache.map(c => `
@@ -340,7 +371,7 @@ async function loadCategories() {
 // RECENT ANNOUNCEMENTS
 async function loadRecentAnnouncements() {
   try {
-    const res = await fetch(`${API_BASE}/announcements?limit=5`, { credentials: 'include' });
+    const res = await fetch(`${API_BASE}/announcements?limit=5`, { credentials: 'same-origin' });
     const data = await res.json();
     const container = document.getElementById('recent-announcements-list');
 
@@ -373,7 +404,7 @@ async function loadAnnouncementsTable(searchTerm = '') {
       ? `${API_BASE}/announcements?search=${encodeURIComponent(searchTerm)}&limit=50`
       : `${API_BASE}/announcements?limit=50`;
 
-    const res = await fetch(url, { credentials: 'include' });
+    const res = await fetch(url, { credentials: 'same-origin' });
     const data = await res.json();
     const tbody = document.getElementById('announcements-table-body');
 
@@ -504,7 +535,7 @@ async function handleAnnouncementSubmit(e) {
 
 async function editAnnouncement(id) {
   try {
-    const res = await fetch(`${API_BASE}/announcements/${id}`, { credentials: 'include' });
+    const res = await fetch(`${API_BASE}/announcements/${id}`, { credentials: 'same-origin' });
     const data = await res.json();
 
     document.getElementById('modal-title').textContent = 'Edit Announcement';
@@ -777,7 +808,7 @@ async function handleNotificationBroadcast(e) {
 
 async function loadNotificationHistory() {
   try {
-    const res = await fetch(`${API_BASE}/notifications/history`, { credentials: 'include' });
+    const res = await fetch(`${API_BASE}/notifications/history`, { credentials: 'same-origin' });
     const items = await res.json();
     const list = document.getElementById('notification-history-list');
 
@@ -854,7 +885,7 @@ async function handleTestChat(e) {
     const devoteeRes = await fetch(`${API_BASE}/auth/devotee-init`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
+      credentials: 'same-origin',
       body: JSON.stringify({ device_id: 'admin_test_terminal_01' })
     });
     const devoteeData = await devoteeRes.json();
@@ -865,7 +896,7 @@ async function handleTestChat(e) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${devoteeData.access_token}`
       },
-      credentials: 'include',
+      credentials: 'same-origin',
       body: JSON.stringify({ query })
     });
 

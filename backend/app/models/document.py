@@ -15,3 +15,4 @@ class KnowledgeDocument(Base):
     source_type = Column(String(50), nullable=False, default="Manual Upload")
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
