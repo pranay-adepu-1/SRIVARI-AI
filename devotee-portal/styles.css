@@ -379,6 +379,34 @@ body {
   display: block;
 }
 
+.chat-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-clear-chat {
+  background: rgba(212, 175, 55, 0.08);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  color: var(--text-muted);
+  border-radius: 8px;
+  padding: 4px 9px;
+  font-size: 0.74rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.btn-clear-chat:hover {
+  background: rgba(212, 175, 55, 0.2);
+  color: var(--gold-light);
+  border-color: var(--gold);
+}
+
 .badge-live {
   background: rgba(46, 125, 50, 0.2);
   color: #81C784;
@@ -474,6 +502,69 @@ body {
 .msg-citations a:hover {
   text-decoration: underline;
   color: var(--gold);
+}
+
+.msg-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(212, 175, 55, 0.18);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.btn-msg-action {
+  background: rgba(25, 4, 8, 0.75);
+  border: 1px solid rgba(212, 175, 55, 0.28);
+  color: var(--text-muted);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.btn-msg-action:hover {
+  background: rgba(212, 175, 55, 0.22);
+  color: var(--gold-light);
+  border-color: var(--gold);
+  transform: translateY(-1px);
+}
+
+.btn-msg-action.copied {
+  color: #81C784 !important;
+  border-color: #81C784 !important;
+  background: rgba(46, 125, 50, 0.18) !important;
+}
+
+.msg-bubble strong {
+  color: var(--gold-light);
+}
+
+.msg-divider {
+  border: 0;
+  height: 1px;
+  background: rgba(212, 175, 55, 0.2);
+  margin: 10px 0;
+}
+
+.msg-bullet-item {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 4px 0;
+}
+
+.msg-bullet-dot {
+  color: var(--gold);
+  font-size: 0.85rem;
+  line-height: 1;
 }
 
 /* TYPING / COLD START INDICATOR */
@@ -604,11 +695,31 @@ body {
 
 .sync-badge {
   font-size: 0.72rem;
+  padding: 3px 9px;
+  border-radius: 10px;
+  font-weight: 600;
+  transition: all 0.25s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sync-badge.syncing {
   color: var(--gold-light);
   background: rgba(212, 175, 55, 0.12);
-  border: 1px solid rgba(212, 175, 55, 0.25);
-  padding: 2px 8px;
-  border-radius: 10px;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+}
+
+.sync-badge.synced {
+  color: #81C784;
+  background: rgba(46, 125, 50, 0.18);
+  border: 1px solid rgba(46, 125, 50, 0.55);
+}
+
+.sync-badge.offline {
+  color: #FFB74D;
+  background: rgba(245, 127, 23, 0.18);
+  border: 1px solid rgba(245, 127, 23, 0.55);
 }
 
 /* ANNOUNCEMENTS LIST */

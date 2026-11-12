@@ -11,16 +11,20 @@ const chatMessages = document.getElementById('chat-messages');
 const chatForm = document.getElementById('chat-form');
 const chatInput = document.getElementById('chat-input');
 const btnSend = document.getElementById('btn-send');
+const btnClearChat = document.getElementById('btn-clear-chat');
+const btnClearLabel = document.getElementById('btn-clear-label');
 const langToggleBtn = document.getElementById('lang-toggle-btn');
 const langEnSegment = document.getElementById('lang-en');
 const langTeSegment = document.getElementById('lang-te');
 const announcementsList = document.getElementById('announcements-list');
+const annSyncBadge = document.getElementById('ann-sync-badge');
 
 // Translations Dictionary
 const translations = {
   en: {
     brandTagline: "Tirumala Devotee Assistant",
     btnTtd: "TTD Official Portal",
+    btnClearLabel: "Clear Chat",
     disclaimerTag: "Devotee Notice:",
     disclaimerText: "Srivari AI is an independent informational guide and is <strong>not</strong> officially affiliated with TTD. All bookings must be completed directly on <a href='https://ttdevasthanams.ap.gov.in/' target='_blank' rel='noopener'>ttdevasthanams.ap.gov.in</a>.",
     heroTitle: "Welcome to <span>Srivari AI</span>",
@@ -32,6 +36,12 @@ const translations = {
     btnSendLabel: "Ask",
     panelAnnTitle: "Official TTD Announcements",
     panelGuidesTitle: "Quick Pilgrimage Guides",
+    syncingBadge: "Syncing...",
+    syncedBadge: "● Synced",
+    offlineBadge: "⚠️ Offline Fallback",
+    copyBtn: "Copy",
+    copiedBtn: "✓ Copied!",
+    shareBtn: "Share",
     connectingNotice: "Connecting to Srivari AI... this may take up to 30 seconds if the server is waking up.",
     connectingSub: "Checking verified official TTD knowledge base...",
     errorFallbackText: "Unable to load real-time announcements at this moment due to a network or server delay.",
@@ -72,6 +82,7 @@ const translations = {
   te: {
     brandTagline: "తిరుమల భక్తుల సహాయకుడు",
     btnTtd: "టీటీడీ అధికారిక పోర్టల్",
+    btnClearLabel: "క్లియర్",
     disclaimerTag: "భక్తుల గమనిక:",
     disclaimerText: "శ్రీవారి AI అనేది భక్తులకు అధికారిక సమాచారాన్ని అందించడానికి రూపొందించబడిన స్వతంత్ర సమాచార వేదిక. దీనికి టీటీడీతో ఎలాంటి ప్రత్యక్ష అధికారిక అనుబంధం లేదు. అన్ని బుకింగ్స్ <a href='https://ttdevasthanams.ap.gov.in/' target='_blank' rel='noopener'>ttdevasthanams.ap.gov.in</a> ద్వారా మాత్రమే చేసుకోవాలి.",
     heroTitle: "<span>శ్రీవారి AI</span> కి స్వాగతం",
@@ -83,6 +94,12 @@ const translations = {
     btnSendLabel: "అడగండి",
     panelAnnTitle: "టీటీడీ అధికారిక ప్రకటనలు",
     panelGuidesTitle: "ముఖ్యమైన యాత్ర మార్గదర్శకాలు",
+    syncingBadge: "సింక్ అవుతోంది...",
+    syncedBadge: "● సింక్ అయింది",
+    offlineBadge: "⚠️ ఆఫ్‌లైన్ ఫాల్‌బ్యాక్",
+    copyBtn: "కాపీ",
+    copiedBtn: "✓ కాపీ అయింది!",
+    shareBtn: "షేర్",
     connectingNotice: "శ్రీవారి AI కనెక్ట్ అవుతోంది... సర్వర్ ప్రారంభమయ్యేందుకు 30 సెకన్లు పట్టవచ్చు.",
     connectingSub: "టీటీడీ అధికారిక సమాచారాన్ని పరిశీలిస్తోంది...",
     errorFallbackText: "నెట్‌వర్క్ లేదా సర్వర్ ఆలస్యం కారణంగా లైవ్ ప్రకటనలు లోడ్ కాలేదు.",
@@ -168,6 +185,38 @@ async function initDevotee() {
   return null;
 }
 
+// Devotional Markdown Formatter (bold, bullets, linebreaks, dividers)
+function formatDevotionalMarkdown(text) {
+  if (!text) return "";
+
+  const lines = text.split('\n');
+  const processedLines = lines.map(line => {
+    const trimmed = line.trim();
+
+    if (trimmed === '---' || trimmed === '___' || trimmed === '***') {
+      return '<hr class="msg-divider">';
+    }
+
+    if (/^[•\-\*]\s+/.test(trimmed)) {
+      const content = trimmed.replace(/^[•\-\*]\s+/, '');
+      return `<div class="msg-bullet-item"><span class="msg-bullet-dot">✦</span><div>${content}</div></div>`;
+    }
+
+    if (/^📌\s*/.test(trimmed)) {
+      const content = trimmed.replace(/^📌\s*/, '');
+      return `<div class="msg-bullet-item"><span class="msg-bullet-dot">📌</span><div>${content}</div></div>`;
+    }
+
+    return line;
+  });
+
+  let formatted = processedLines.join('\n');
+  formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  formatted = formatted.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>');
+
+  return formatted;
+}
+
 // Render Quick Prompt Chips (NO inline onclick; handled via container delegation)
 function renderQuickChips() {
   const container = document.getElementById('quick-chips');
@@ -207,22 +256,18 @@ function submitSpecificQuery(queryText) {
   chatInput.value = queryText;
   handleSendMessage();
 
-  // On mobile viewports (< 900px), smoothly scroll back up to the chat assistant container
   const chatSection = document.querySelector('.chat-card') || document.querySelector('section.chat-card');
   if (chatSection && window.innerWidth < 900) {
     chatSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 }
 
-// Append a message to chat window
+// Append a message to chat window (with Copy & WhatsApp Share on Assistant answers)
 function appendMessage(sender, text, citations = [], suggestedQuestions = []) {
   const msgDiv = document.createElement('div');
   msgDiv.className = `msg ${sender}`;
 
-  let formatted = text
-    .replace(/\n\n/g, '<br><br>')
-    .replace(/\n/g, '<br>')
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  const formatted = formatDevotionalMarkdown(text);
 
   let citationsHtml = '';
   if (citations && citations.length > 0) {
@@ -239,12 +284,84 @@ function appendMessage(sender, text, citations = [], suggestedQuestions = []) {
     `;
   }
 
+  // Action buttons (Copy and Share to WhatsApp) on assistant responses
+  let actionsHtml = '';
+  if (sender === 'assistant') {
+    const t = translations[currentLanguage] || translations.en;
+    actionsHtml = `
+      <div class="msg-actions">
+        <button type="button" class="btn-msg-action btn-copy" aria-label="Copy Answer">
+          <svg class="svg-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          <span class="action-label">${t.copyBtn}</span>
+        </button>
+        <button type="button" class="btn-msg-action btn-share" aria-label="Share on WhatsApp">
+          <svg class="svg-icon" viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true">
+            <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2M12.05 3.67C14.25 3.67 16.31 4.53 17.87 6.09C19.42 7.65 20.28 9.72 20.28 11.92C20.28 16.46 16.59 20.15 12.04 20.15C10.56 20.15 9.11 19.76 7.85 19.01L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 14.99 3.81 13.47 3.81 11.91C3.81 7.37 7.5 3.67 12.05 3.67Z"/>
+          </svg>
+          <span>${t.shareBtn}</span>
+        </button>
+      </div>
+    `;
+  }
+
   msgDiv.innerHTML = `
     <div class="msg-bubble">
       <div>${formatted}</div>
       ${citationsHtml}
+      ${actionsHtml}
     </div>
   `;
+
+  // Attach event handlers for copy and share
+  if (sender === 'assistant') {
+    const copyBtn = msgDiv.querySelector('.btn-copy');
+    const shareBtn = msgDiv.querySelector('.btn-share');
+
+    if (copyBtn) {
+      copyBtn.addEventListener('click', async () => {
+        const plainText = text.replace(/<[^>]*>?/gm, '');
+        try {
+          await navigator.clipboard.writeText(plainText);
+          const label = copyBtn.querySelector('.action-label');
+          const t = translations[currentLanguage] || translations.en;
+          label.textContent = t.copiedBtn;
+          copyBtn.classList.add('copied');
+          setTimeout(() => {
+            label.textContent = t.copyBtn;
+            copyBtn.classList.remove('copied');
+          }, 2000);
+        } catch (err) {
+          console.warn("Clipboard write failed:", err);
+        }
+      });
+    }
+
+    if (shareBtn) {
+      shareBtn.addEventListener('click', async () => {
+        const plainText = text.replace(/<[^>]*>?/gm, '');
+        const shareContent = `🙏 *Srivari AI (శ్రీవారి AI) - Tirumala Devotee Assistant*\n\n${plainText}\n\n🔗 Ask Srivari AI: https://srivari-ai.onrender.com/portal`;
+
+        if (navigator.share) {
+          try {
+            await navigator.share({
+              title: 'Srivari AI (శ్రీవారి AI)',
+              text: shareContent,
+              url: 'https://srivari-ai.onrender.com/portal'
+            });
+            return;
+          } catch (e) {
+            // User cancelled or share dismissed, fall through to WhatsApp
+          }
+        }
+
+        const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareContent)}`;
+        window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+      });
+    }
+  }
 
   chatMessages.appendChild(msgDiv);
   chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -290,7 +407,6 @@ function showTyping() {
   chatMessages.appendChild(typingDiv);
   chatMessages.scrollTop = chatMessages.scrollHeight;
 
-  // If server is on a cold start, update indicator message after 6 seconds to reassure devotee
   typingTimer = setTimeout(() => {
     const subText = document.getElementById('cold-start-sub');
     if (subText) {
@@ -307,7 +423,7 @@ function removeTyping() {
   if (typing) typing.remove();
 }
 
-// Send Message Handler with strict `isSubmitting` lock
+// Send Message Handler with strict `isSubmitting` lock & transparent auto-recovery
 async function handleSendMessage() {
   if (isSubmitting) return;
 
@@ -346,7 +462,6 @@ async function handleSendMessage() {
       devoteeToken = null;
       currentSessionId = null;
 
-      // Re-fetch cleanly with no stale token
       res = await fetch(`${API_BASE}/chat/query`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -373,7 +488,6 @@ async function handleSendMessage() {
       }
       console.error(`[Srivari AI Chat Error] Status ${res.status}:`, errorDetail);
 
-      // If token was rejected with 401/403, reset stored credentials so next call automatically recovers
       if (res.status === 401 || res.status === 403) {
         localStorage.removeItem('srivari_devotee_token');
         localStorage.removeItem('srivari_session_id');
@@ -445,9 +559,15 @@ function renderAnnouncementsFallback() {
   }
 }
 
-// Load Official Announcements (with 8-second timeout & AbortController)
+// Load Official Announcements (with dynamic sync badge update & 8-second timeout)
 async function loadAnnouncements() {
+  const t = translations[currentLanguage] || translations.en;
   renderAnnouncementsSkeleton();
+
+  if (annSyncBadge) {
+    annSyncBadge.className = 'sync-badge syncing';
+    annSyncBadge.textContent = t.syncingBadge;
+  }
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 8000);
@@ -467,34 +587,45 @@ async function loadAnnouncements() {
 
     if (!data.items || data.items.length === 0) {
       announcementsList.innerHTML = `<p style="color: var(--text-muted); font-size: 0.85rem; padding: 12px;">No active announcements currently.</p>`;
-      return;
+    } else {
+      data.items.forEach(ann => {
+        const item = document.createElement('div');
+        item.className = 'ann-item';
+
+        const isTe = currentLanguage === 'te';
+        const title = isTe && ann.title_te ? ann.title_te : ann.title_en;
+        const content = isTe && ann.content_te ? ann.content_te : ann.content_en;
+        const dateStr = ann.publication_date ? new Date(ann.publication_date).toLocaleDateString() : 'Official Notice';
+
+        item.innerHTML = `
+          <div class="ann-item-header">
+            ${ann.is_quota_alert ? `<span class="ann-badge-quota">⚡ ${isTe ? 'కోటా అప్‌డేట్' : 'QUOTA ALERT'}</span>` : `<span></span>`}
+            <span class="ann-date">${dateStr}</span>
+          </div>
+          <h4>${title}</h4>
+          <p>${content.length > 140 ? content.substring(0, 140) + '...' : content}</p>
+          <a href="${ann.source_url}" target="_blank" rel="noopener" class="ann-link">
+            ${isTe ? 'అధికారిక వివరాలు' : 'Read Official Source'} →
+          </a>
+        `;
+        announcementsList.appendChild(item);
+      });
     }
 
-    data.items.forEach(ann => {
-      const item = document.createElement('div');
-      item.className = 'ann-item';
-
-      const isTe = currentLanguage === 'te';
-      const title = isTe && ann.title_te ? ann.title_te : ann.title_en;
-      const content = isTe && ann.content_te ? ann.content_te : ann.content_en;
-      const dateStr = ann.publication_date ? new Date(ann.publication_date).toLocaleDateString() : 'Official Notice';
-
-      item.innerHTML = `
-        <div class="ann-item-header">
-          ${ann.is_quota_alert ? `<span class="ann-badge-quota">⚡ ${isTe ? 'కోటా అప్‌డేట్' : 'QUOTA ALERT'}</span>` : `<span></span>`}
-          <span class="ann-date">${dateStr}</span>
-        </div>
-        <h4>${title}</h4>
-        <p>${content.length > 140 ? content.substring(0, 140) + '...' : content}</p>
-        <a href="${ann.source_url}" target="_blank" rel="noopener" class="ann-link">
-          ${isTe ? 'అధికారిక వివరాలు' : 'Read Official Source'} →
-        </a>
-      `;
-      announcementsList.appendChild(item);
-    });
+    // Dynamic sync badge -> Synced
+    if (annSyncBadge) {
+      annSyncBadge.className = 'sync-badge synced';
+      annSyncBadge.textContent = t.syncedBadge;
+    }
   } catch (err) {
     clearTimeout(timeoutId);
     console.warn("[Srivari AI Announcements] Fetch warning/timeout:", err);
+    
+    // Dynamic sync badge -> Offline Fallback
+    if (annSyncBadge) {
+      annSyncBadge.className = 'sync-badge offline';
+      annSyncBadge.textContent = t.offlineBadge;
+    }
     renderAnnouncementsFallback();
   }
 }
@@ -506,7 +637,6 @@ function setLanguage(lang) {
 
   const t = translations[lang] || translations.en;
 
-  // Toggle button styling
   if (lang === 'en') {
     langEnSegment.classList.add('active');
     langTeSegment.classList.remove('active');
@@ -515,9 +645,9 @@ function setLanguage(lang) {
     langEnSegment.classList.remove('active');
   }
 
-  // Update DOM text elements
   document.getElementById('brand-tagline').textContent = t.brandTagline;
   document.getElementById('btn-ttd-label').textContent = t.btnTtd;
+  if (btnClearLabel) btnClearLabel.textContent = t.btnClearLabel;
   document.getElementById('disclaimer-tag').textContent = t.disclaimerTag;
   document.getElementById('disclaimer-text').innerHTML = t.disclaimerText;
   document.getElementById('hero-title').innerHTML = t.heroTitle;
@@ -530,7 +660,6 @@ function setLanguage(lang) {
   document.getElementById('panel-guides-title').querySelector('span').textContent = t.panelGuidesTitle;
   document.getElementById('footer-disclaimer-text').innerHTML = t.footerDisclaimer;
 
-  // Update initial welcome bubble if no conversation has taken place
   const welcomeBubble = document.getElementById('welcome-message-bubble');
   if (welcomeBubble && chatMessages.children.length === 1) {
     welcomeBubble.innerHTML = t.welcomeMessage;
@@ -550,6 +679,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   langToggleBtn.addEventListener('click', () => {
     setLanguage(currentLanguage === 'en' ? 'te' : 'en');
   });
+
+  // Clear Chat Button Handler
+  if (btnClearChat) {
+    btnClearChat.addEventListener('click', () => {
+      const t = translations[currentLanguage] || translations.en;
+      chatMessages.innerHTML = `
+        <div class="msg assistant">
+          <div class="msg-bubble" id="welcome-message-bubble">
+            ${t.welcomeMessage}
+          </div>
+        </div>
+      `;
+      currentSessionId = null;
+      localStorage.removeItem('srivari_session_id');
+      renderQuickChips();
+      if (chatInput) chatInput.focus();
+    });
+  }
 
   // Chat Form Submission
   chatForm.addEventListener('submit', (e) => {
