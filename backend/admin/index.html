@@ -121,9 +121,6 @@
           <div class="status-indicator">
             <span class="dot live"></span> Backend Online
           </div>
-          <button id="btn-header-logout" class="btn btn-outline btn-sm" title="Sign Out of Admin Portal">
-            <span class="material-symbols-outlined">logout</span> Logout
-          </button>
         </div>
       </header>
 
@@ -155,23 +152,23 @@
 
           <div class="stat-card">
             <div class="stat-icon orange">
-              <span class="material-symbols-outlined">alarm</span>
+              <span class="material-symbols-outlined">forum</span>
             </div>
             <div class="stat-info">
-              <span class="stat-label">Active Quota Releases</span>
-              <h3 id="stat-quotas">--</h3>
-              <small class="stat-sub">Upcoming bookings</small>
+              <span class="stat-label">Total Devotee Queries</span>
+              <h3 id="stat-queries">--</h3>
+              <small class="stat-sub">Answered by Srivari AI</small>
             </div>
           </div>
 
           <div class="stat-card">
             <div class="stat-icon green">
-              <span class="material-symbols-outlined">group</span>
+              <span class="material-symbols-outlined">sync</span>
             </div>
             <div class="stat-info">
-              <span class="stat-label">Active Devotee Devices</span>
-              <h3 id="stat-users">--</h3>
-              <small class="stat-sub">Registered mobile apps</small>
+              <span class="stat-label">Last Scraper Sync</span>
+              <h3 id="stat-last-sync" style="font-size: 1.25rem; font-weight: 700;">--</h3>
+              <small id="stat-last-sync-sub" class="stat-sub">news.tirumala.org</small>
             </div>
           </div>
         </div>
@@ -199,27 +196,27 @@
                 <span class="material-symbols-outlined success-icon">check_circle</span>
                 <div class="integration-meta">
                   <strong>news.tirumala.org (Press Releases)</strong>
-                  <p>RSS Feed Connected & Polled every 2 hours</p>
+                  <p id="health-news-meta">RSS Feed Connected • <span id="health-news-time">Polled recently</span></p>
                 </div>
-                <span class="badge badge-green">Healthy</span>
+                <span id="health-news-badge" class="badge badge-green">Healthy</span>
               </div>
 
               <div class="integration-item">
                 <span class="material-symbols-outlined success-icon">check_circle</span>
                 <div class="integration-meta">
                   <strong>ttdevasthanams.ap.gov.in (Booking Portal)</strong>
-                  <p>Booking Quotas and Public Notices Verified</p>
+                  <p id="health-booking-meta">Official Portals Monitored • <span id="health-booking-time">Active (Real-time)</span></p>
                 </div>
-                <span class="badge badge-green">Healthy</span>
+                <span id="health-booking-badge" class="badge badge-green">Healthy</span>
               </div>
 
               <div class="integration-item">
                 <span class="material-symbols-outlined success-icon">check_circle</span>
                 <div class="integration-meta">
                   <strong>AI RAG Knowledge Engine</strong>
-                  <p>Telugu & English Hybrid Semantic Vector Store</p>
+                  <p id="health-rag-meta"><span id="health-rag-count">--</span> TTD documents indexed in semantic store</p>
                 </div>
-                <span class="badge badge-gold">Active</span>
+                <span id="health-rag-badge" class="badge badge-gold">Active</span>
               </div>
 
               <div class="disclaimer-box">

@@ -118,6 +118,24 @@ class TestAdminPortalSecurityAndFeatures(unittest.TestCase):
         cookie_header = "".join(raw_headers)
         self.assertIn("srivari_admin_token", cookie_header)
 
+    def test_dashboard_stats_live_metrics_and_health(self):
+        from app.api.admin import get_dashboard_stats
+        admin = Admin(id="test_admin", username=settings.ADMIN_USERNAME, full_name="Admin Officer", role="super_admin")
+        db = MagicMock()
+        db.query().count.return_value = 10
+        db.query().filter().count.return_value = 8
+        db.query().filter().order_by().first.return_value = None
+        db.query().order_by().first.return_value = None
+
+        stats = get_dashboard_stats(admin=admin, db=db)
+        self.assertIn("total_queries", stats)
+        self.assertIn("last_scraper_sync", stats)
+        self.assertIn("integration_health", stats)
+        self.assertIn("news_scraper", stats["integration_health"])
+        self.assertIn("booking_portal", stats["integration_health"])
+        self.assertIn("rag_knowledge_engine", stats["integration_health"])
+        self.assertEqual(stats["integration_health"]["news_scraper"]["status"], "Healthy")
+
     def test_knowledge_document_chunking_and_rag_search(self):
         doc = {
             "id": "doc_test_1",

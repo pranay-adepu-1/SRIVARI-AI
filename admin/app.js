@@ -345,10 +345,53 @@ async function loadDashboardStats() {
     const res = await adminFetch(`${API_BASE}/admin/dashboard-stats`);
     const data = await res.json();
 
-    document.getElementById('stat-announcements').textContent = data.total_announcements || 0;
-    document.getElementById('stat-verified').textContent = data.verified_announcements || 0;
-    document.getElementById('stat-quota').textContent = data.quota_alerts || 0;
-    document.getElementById('stat-users').textContent = data.total_users || 0;
+    const elAnnounce = document.getElementById('stat-announcements');
+    if (elAnnounce) elAnnounce.textContent = data.total_announcements ?? 0;
+
+    const elVerified = document.getElementById('stat-verified');
+    if (elVerified) elVerified.textContent = data.verified_announcements ?? 0;
+
+    // Total Devotee Queries (KPI Card 3)
+    const elQueries = document.getElementById('stat-queries');
+    if (elQueries) elQueries.textContent = data.total_queries ?? data.total_messages ?? 0;
+    const elQuota = document.getElementById('stat-quotas') || document.getElementById('stat-quota');
+    if (elQuota && !elQueries) elQuota.textContent = data.quota_alerts ?? 0;
+
+    // Last Scraper Sync (KPI Card 4)
+    const elLastSync = document.getElementById('stat-last-sync');
+    if (elLastSync) elLastSync.textContent = data.last_scraper_sync || 'Just now';
+    const elUsers = document.getElementById('stat-users');
+    if (elUsers && !elLastSync) elUsers.textContent = data.total_users ?? 0;
+
+    // Dynamic Integration Health Timestamps & Status
+    if (data.integration_health) {
+      const newsTime = document.getElementById('health-news-time');
+      if (newsTime) newsTime.textContent = `Polled: ${data.integration_health.news_scraper?.last_checked || data.last_scraper_sync || 'Just now'}`;
+
+      const newsBadge = document.getElementById('health-news-badge');
+      if (newsBadge && data.integration_health.news_scraper?.status) {
+        newsBadge.textContent = data.integration_health.news_scraper.status;
+      }
+
+      const bookingTime = document.getElementById('health-booking-time');
+      if (bookingTime) bookingTime.textContent = `Status: ${data.integration_health.booking_portal?.last_checked || 'Active (Real-time)'}`;
+
+      const bookingBadge = document.getElementById('health-booking-badge');
+      if (bookingBadge && data.integration_health.booking_portal?.status) {
+        bookingBadge.textContent = data.integration_health.booking_portal.status;
+      }
+
+      const ragCount = document.getElementById('health-rag-count');
+      if (ragCount) {
+        const count = data.integration_health.rag_knowledge_engine?.indexed_documents ?? data.knowledge_docs_count ?? 0;
+        ragCount.textContent = count;
+      }
+
+      const ragBadge = document.getElementById('health-rag-badge');
+      if (ragBadge && data.integration_health.rag_knowledge_engine?.status) {
+        ragBadge.textContent = data.integration_health.rag_knowledge_engine.status;
+      }
+    }
   } catch (err) {
     console.error('Failed to load dashboard stats:', err);
   }
@@ -370,32 +413,75 @@ async function loadCategories() {
 
 // RECENT ANNOUNCEMENTS
 async function loadRecentAnnouncements() {
-  try {
-    const res = await fetch(`${API_BASE}/announcements?limit=5`, { credentials: 'same-origin' });
-    const data = await res.json();
-    const container = document.getElementById('recent-announcements-list');
+  const container = document.getElementById('dashboard-recent-list') || document.getElementById('recent-announcements-list');
+  if (!container) return;
 
-    if (!data.items || data.items.length === 0) {
-      container.innerHTML = '<p class="text-muted">No announcements indexed yet.</p>';
+  // Render animated skeleton loader while fetching
+  container.innerHTML = `
+    <div class="skeleton-list">
+      ${[1, 2, 3, 4].map(() => `
+        <div class="skeleton-announcement-item">
+          <div class="skeleton-line" style="width: 75%; height: 16px; margin-bottom: 6px;"></div>
+          <div class="skeleton-line" style="width: 50%; height: 12px; margin-bottom: 4px;"></div>
+          <div class="skeleton-line" style="width: 30%; height: 10px;"></div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+  try {
+    let res = await fetch(`${API_BASE}/announcements?limit=10`, {
+      credentials: 'same-origin',
+      signal: controller.signal
+    });
+    if (!res.ok) {
+      res = await fetch(`/announcements?limit=10`, {
+        credentials: 'same-origin',
+        signal: controller.signal
+      });
+    }
+    clearTimeout(timeoutId);
+
+    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+
+    const data = await res.json();
+    const items = Array.isArray(data) ? data : (data.items || []);
+
+    if (items.length === 0) {
+      container.innerHTML = '<p class="text-muted" style="text-align: center; padding: 24px;">No announcements indexed yet.</p>';
       return;
     }
 
-    container.innerHTML = data.items.map(item => `
+    container.innerHTML = items.map(item => `
       <div class="announcement-item">
         <div class="announcement-info">
-          <h4>${item.is_pinned ? '<span class="badge-pinned">📌 Pinned</span> ' : ''}${escapeHtml(item.title_en)}</h4>
-          <p>${escapeHtml(item.title_te)}</p>
-          <small class="meta">${new Date(item.publication_date).toLocaleDateString()} • ${escapeHtml(item.source_domain)}</small>
+          <h4>${item.is_pinned ? '<span class="badge-pinned">📌 Pinned</span> ' : ''}${escapeHtml(item.title_en || '')}</h4>
+          ${item.title_te ? `<p class="telugu-text">${escapeHtml(item.title_te)}</p>` : ''}
+          <small class="meta">${new Date(item.publication_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} • ${escapeHtml(item.source_domain || 'news.tirumala.org')}</small>
         </div>
         <span class="badge ${item.is_quota_alert ? 'badge-orange' : 'badge-gold'}">
-          ${item.is_quota_alert ? 'Quota Release' : 'Notice'}
+          ${item.is_quota_alert ? 'Quota Release' : 'Official Notice'}
         </span>
       </div>
     `).join('');
   } catch (err) {
-    console.error('Failed to load recent items:', err);
+    clearTimeout(timeoutId);
+    console.error('Failed to load recent announcements:', err);
+    container.innerHTML = `
+      <div class="error-state" style="text-align: center; padding: 24px 16px;">
+        <p style="color: #b91c1c; font-size: 13.5px; margin-bottom: 12px;">Failed to load announcements (${err.name === 'AbortError' ? 'Request timed out' : 'Network error'}).</p>
+        <button class="btn btn-outline btn-sm" onclick="loadRecentAnnouncements()">
+          <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle;">refresh</span> Retry
+        </button>
+      </div>
+    `;
   }
 }
+
+window.loadRecentAnnouncements = loadRecentAnnouncements;
 
 // ANNOUNCEMENTS TABLE
 async function loadAnnouncementsTable(searchTerm = '') {

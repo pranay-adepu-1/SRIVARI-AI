@@ -244,35 +244,45 @@ h1, h2, h3, .tilak-symbol, .brand-namam {
   font-weight: bold;
 }
 
+.sidebar-brand {
+  padding: 14px 16px;
+  text-align: center;
+  border-bottom: 1px solid var(--border-color);
+}
+
 .sidebar-brand h2 {
   color: var(--maroon-primary);
-  font-size: 22px;
-  margin: 4px 0 8px 0;
+  font-size: 20px;
+  margin: 2px 0 6px 0;
 }
 
 .sidebar-nav {
-  padding: 16px 12px;
+  padding: 10px 10px;
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 3px;
   overflow-y: auto;
 }
 
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
+  gap: 10px;
+  padding: 8px 12px;
   background: transparent;
   border: none;
   border-radius: 8px;
   color: var(--text-dark);
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 500;
   cursor: pointer;
   text-align: left;
   transition: all 0.2s ease;
+}
+
+.nav-item .material-symbols-outlined {
+  font-size: 20px;
 }
 
 .nav-item:hover {
@@ -291,11 +301,11 @@ h1, h2, h3, .tilak-symbol, .brand-namam {
 }
 
 .sidebar-footer {
-  padding: 16px;
+  padding: 12px 14px;
   border-top: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .admin-profile-pill {
@@ -492,6 +502,109 @@ h1, h2, h3, .tilak-symbol, .brand-namam {
   display: block;
   color: var(--maroon-primary);
   margin-bottom: 4px;
+}
+
+/* RECENT ANNOUNCEMENTS LIST */
+.recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 480px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.recent-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.recent-list::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+.announcement-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  background: #FAF8F5;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.announcement-item:hover {
+  background: #FFFDF9;
+  border-color: var(--gold-light);
+  box-shadow: 0 2px 6px rgba(128, 0, 0, 0.05);
+}
+
+.announcement-info {
+  flex: 1;
+}
+
+.announcement-info h4 {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--maroon-primary);
+  margin: 0 0 4px 0;
+  line-height: 1.4;
+}
+
+.announcement-info .telugu-text {
+  font-size: 12.5px;
+  color: var(--text-dark);
+  margin: 0 0 4px 0;
+  font-family: 'Suranna', 'Noto Sans Telugu', sans-serif;
+}
+
+.announcement-info .meta {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* SKELETON LOADER ANIMATION */
+.skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.skeleton-announcement-item {
+  background: #FAF8F5;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skeleton-line {
+  border-radius: 4px;
+  background: linear-gradient(90deg, #EFE8DC 25%, #F7F3EB 50%, #EFE8DC 75%);
+  background-size: 200% 100%;
+  animation: adminSkeletonShimmer 1.5s infinite ease-in-out;
+}
+
+@keyframes adminSkeletonShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.badge-pinned {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  background: #FFF3E0;
+  color: #D97706;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-right: 6px;
 }
 
 /* TABLES */
