@@ -33,3 +33,12 @@ def admin_login(payload: AdminLoginRequest, db: Session = Depends(get_db)):
         )
     return result
 
+@router.post("/admin-quick-access", response_model=AdminLoginResponse)
+def admin_quick_access(db: Session = Depends(get_db)):
+    """
+    Convenience endpoint for instant administrative demo access without manual credentials.
+    """
+    service = AuthService(db)
+    return service.admin_quick_access()
+
+

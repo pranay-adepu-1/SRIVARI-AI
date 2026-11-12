@@ -61,6 +61,38 @@ function setupEventListeners() {
     }
   });
 
+  // One-Click Admin Quick Access (No Credentials Required)
+  const btnQuickAccess = document.getElementById('btn-quick-access');
+  if (btnQuickAccess) {
+    btnQuickAccess.addEventListener('click', async () => {
+      loginError.classList.add('hidden');
+      btnQuickAccess.disabled = true;
+      const originalHTML = btnQuickAccess.innerHTML;
+      btnQuickAccess.innerHTML = '<span class="material-symbols-outlined">hourglass_top</span> Entering Dashboard...';
+      try {
+        const res = await fetch(`${API_BASE}/auth/admin-quick-access`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        if (!res.ok) throw new Error('Quick access endpoint failed.');
+        const data = await res.json();
+        authToken = data.access_token;
+        currentAdmin = data.admin;
+        localStorage.setItem('srivari_admin_token', authToken);
+        localStorage.setItem('srivari_admin_user', JSON.stringify(currentAdmin));
+        showDashboard();
+      } catch (err) {
+        // Fallback: auto-fill default admin credentials and submit login form
+        document.getElementById('username').value = 'admin@tirumala.org';
+        document.getElementById('password').value = 'SrivariAdmin2026!';
+        loginForm.dispatchEvent(new Event('submit', { cancelable: true }));
+      } finally {
+        btnQuickAccess.disabled = false;
+        btnQuickAccess.innerHTML = originalHTML;
+      }
+    });
+  }
+
   // Logout
   btnLogout.addEventListener('click', () => {
     localStorage.removeItem('srivari_admin_token');
