@@ -32,18 +32,32 @@ logger = logging.getLogger("srivari.main")
 async def lifespan(app: FastAPI):
     # Startup: Initialize Database & RAG Search Engine
     logger.info("Initializing Srivari AI backend application...")
-    init_database()
-    
-    # Start Schedulers
-    start_scraper_scheduler()
-    start_daily_digest_scheduler()
-    
+    try:
+        init_database()
+        logger.info("Database initialized successfully.")
+    except Exception as e:
+        logger.error(f"Database initialization warning: {e}")
+
+    # Start Background Schedulers
+    try:
+        start_scraper_scheduler()
+    except Exception as e:
+        logger.warning(f"Scraper scheduler warning: {e}")
+
+    try:
+        start_daily_digest_scheduler()
+    except Exception as e:
+        logger.warning(f"Digest scheduler warning: {e}")
+
     yield
-    
+
     # Shutdown
     logger.info("Shutting down background schedulers...")
-    stop_scraper_scheduler()
-    stop_daily_digest_scheduler()
+    try:
+        stop_scraper_scheduler()
+        stop_daily_digest_scheduler()
+    except Exception as e:
+        logger.warning(f"Scheduler shutdown warning: {e}")
 
 app = FastAPI(
     title=settings.APP_NAME,
