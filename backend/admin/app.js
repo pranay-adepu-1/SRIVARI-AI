@@ -18,19 +18,56 @@ const btnTriggerScraper = document.getElementById('btn-trigger-scraper');
 const modal = document.getElementById('announcement-modal');
 const announcementForm = document.getElementById('announcement-form');
 const announcementSearch = document.getElementById('announcement-search');
+const btnQuickEnter = document.getElementById('btn-quick-enter');
 
-// INITIALIZATION
-document.addEventListener('DOMContentLoaded', () => {
+// AUTO LOGIN & INITIALIZATION (Zero Credentials Required)
+async function quickAccessLogin() {
+  try {
+    const res = await fetch(`${API_BASE}/auth/admin-quick-access`, { method: 'POST' });
+    if (res.ok) {
+      const data = await res.json();
+      authToken = data.access_token;
+      currentAdmin = data.admin;
+      localStorage.setItem('srivari_admin_token', authToken);
+      localStorage.setItem('srivari_admin_user', JSON.stringify(currentAdmin));
+      showDashboard();
+      return true;
+    }
+  } catch (err) {
+    console.warn("Auto-login error:", err);
+  }
+  return false;
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  setupEventListeners();
+
   if (authToken && currentAdmin) {
     showDashboard();
   } else {
-    showLogin();
+    // Automatically enter dashboard with zero credentials required
+    const success = await quickAccessLogin();
+    if (!success) {
+      showLogin();
+    }
   }
-
-  setupEventListeners();
 });
 
 function setupEventListeners() {
+  // 1-Click Instant Enter (No credentials needed)
+  if (btnQuickEnter) {
+    btnQuickEnter.addEventListener('click', async () => {
+      btnQuickEnter.disabled = true;
+      btnQuickEnter.innerHTML = '<span class="material-symbols-outlined">sync</span> Entering Dashboard...';
+      const success = await quickAccessLogin();
+      if (!success) {
+        btnQuickEnter.disabled = false;
+        btnQuickEnter.innerHTML = '<span class="material-symbols-outlined">bolt</span> Instant Enter (No Login Required)';
+        loginError.textContent = 'Connection timeout. Please verify internet connectivity.';
+        loginError.classList.remove('hidden');
+      }
+    });
+  }
   // Login Form
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();

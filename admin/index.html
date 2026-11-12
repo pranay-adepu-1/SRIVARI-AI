@@ -39,7 +39,15 @@
 
         <div id="login-error" class="error-badge hidden"></div>
 
-        <button type="submit" class="btn btn-primary btn-block">
+        <button type="button" id="btn-quick-enter" class="btn btn-primary btn-block" style="background: linear-gradient(135deg, #D4AF37 0%, #B89628 100%); color: #150204; font-weight: 700; margin-bottom: 14px; font-size: 1rem; padding: 12px;">
+          <span class="material-symbols-outlined">bolt</span> Instant Enter (No Login Required)
+        </button>
+
+        <div style="text-align: center; margin-bottom: 12px; color: var(--text-muted); font-size: 0.78rem;">
+          — Optional Credential Login —
+        </div>
+
+        <button type="submit" class="btn btn-outline btn-block">
           <span class="material-symbols-outlined">login</span> Authenticate
         </button>
       </form>
