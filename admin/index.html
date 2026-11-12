@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
   <title>Srivari AI (శ్రీవారి AI) - Admin Portal</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -71,6 +72,12 @@
         </button>
         <button class="nav-item" data-tab="announcements">
           <span class="material-symbols-outlined">campaign</span> Announcements
+        </button>
+        <button class="nav-item" data-tab="knowledge-base">
+          <span class="material-symbols-outlined">library_books</span> Knowledge Base
+        </button>
+        <button class="nav-item" data-tab="rag-test">
+          <span class="material-symbols-outlined">psychology</span> RAG Retrieval Test
         </button>
         <button class="nav-item" data-tab="scraper">
           <span class="material-symbols-outlined">sync</span> TTD Scraper Sync
@@ -242,15 +249,93 @@
                 <th>Category</th>
                 <th>Source Link</th>
                 <th>Publication Date</th>
+                <th>Priority</th>
                 <th>Quota Alert</th>
                 <th>Verified</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody id="announcements-table-body">
-              <tr><td colspan="7" class="loading-state">Loading announcements...</td></tr>
+              <tr><td colspan="8" class="loading-state">Loading announcements...</td></tr>
             </tbody>
           </table>
+        </div>
+      </section>
+
+      <!-- TAB: KNOWLEDGE BASE & DOCUMENTS -->
+      <section id="tab-knowledge-base" class="tab-pane">
+        <div class="section-toolbar">
+          <div class="search-box">
+            <span class="material-symbols-outlined">search</span>
+            <input type="text" id="document-search" placeholder="Search knowledge sources by title or filename...">
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <button id="btn-refresh-docs" class="btn btn-outline">
+              <span class="material-symbols-outlined">refresh</span> Refresh
+            </button>
+            <button id="btn-upload-document" class="btn btn-primary">
+              <span class="material-symbols-outlined">upload_file</span> Upload New Source
+            </button>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Filename & Document Title</th>
+                <th>Source Type</th>
+                <th>Upload Date</th>
+                <th>Chunks Indexed</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="documents-table-body">
+              <tr><td colspan="6" class="loading-state">Loading knowledge base sources...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB: RAG RETRIEVAL TEST -->
+      <section id="tab-rag-test" class="tab-pane">
+        <div class="rag-test-container">
+          <div class="rag-search-card">
+            <h2 style="font-size: 18px; margin-bottom: 8px; color: var(--maroon-primary);">Devotional RAG Semantic Retrieval Inspector</h2>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">Test the hybrid BM25 and vector semantic search engine. Inspect the exact source chunks, token weights, and similarity scores returned for devotee queries.</p>
+            
+            <div class="rag-input-row">
+              <div class="rag-input-box">
+                <span class="material-symbols-outlined" style="color: var(--gold-dark);">search</span>
+                <input type="text" id="rag-query-input" placeholder="Enter devotee query in English or Telugu (e.g. ₹300 Special Entry Darshan timings)...">
+              </div>
+              <select id="rag-topk-select" class="rag-topk-select" title="Top-K Results to Retrieve">
+                <option value="3">Top 3 Chunks</option>
+                <option value="5" selected>Top 5 Chunks</option>
+                <option value="10">Top 10 Chunks</option>
+              </select>
+              <button id="btn-run-rag-test" class="btn btn-primary">
+                <span class="material-symbols-outlined">play_arrow</span> Run Retrieval Test
+              </button>
+            </div>
+
+            <div class="rag-chips">
+              <span class="rag-chips-label">Quick Test Prompts:</span>
+              <button type="button" class="rag-chip" data-query="What are the rules and timings for ₹300 Special Entry Darshan?">₹300 Darshan Rules</button>
+              <button type="button" class="rag-chip" data-query="How can I register for Srivari Seva voluntary service?">Srivari Seva Registration</button>
+              <button type="button" class="rag-chip" data-query="పురుషులు మరియు మహిళలకు సాంప్రదాయ వస్త్రధారణ నిబంధనలు ఏమిటి?">సాంప్రదాయ వస్త్రధారణ (Dress Code)</button>
+              <button type="button" class="rag-chip" data-query="What is the refund timeline for Tirumala accommodation caution deposit?">Caution Deposit Refund</button>
+              <button type="button" class="rag-chip" data-query="How many laddus are provided and where is the laddu counter?">Laddu Prasadam Rules</button>
+            </div>
+          </div>
+
+          <div id="rag-results-container" class="rag-results-wrapper">
+            <div style="text-align: center; padding: 40px; color: var(--text-muted); background: #FFFFFF; border: 1px dashed var(--border-color); border-radius: 12px;">
+              <span class="material-symbols-outlined" style="font-size: 40px; color: var(--gold-primary); margin-bottom: 8px;">psychology</span>
+              <p>Enter a query above or click any prompt chip to inspect retrieved chunks and similarity scores in real-time.</p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -440,6 +525,9 @@ Click "Run Manual Ingestion Now" to trigger a live check.
 
         <div class="form-row checkbox-row">
           <label>
+            <input type="checkbox" id="modal-is-pinned"> 📌 Pin to Top (Priority Placement)
+          </label>
+          <label>
             <input type="checkbox" id="modal-is-quota"> Is Quota Release Alert
           </label>
           <label>
@@ -454,6 +542,55 @@ Click "Run Manual Ingestion Now" to trigger a live check.
       </form>
     </div>
   </div>
+
+  <!-- KNOWLEDGE DOCUMENT UPLOAD MODAL -->
+  <div id="document-modal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="doc-modal-title">Upload TTD Knowledge Source</h3>
+        <button class="btn-close" onclick="closeDocModal()">&times;</button>
+      </div>
+      <form id="document-form">
+        <div class="form-row">
+          <div class="input-group">
+            <label>Document Title</label>
+            <input type="text" id="doc-title" placeholder="e.g. TTD Vaikunta Dwara Darshan Rules" required>
+          </div>
+          <div class="input-group">
+            <label>Filename (Optional)</label>
+            <input type="text" id="doc-filename" placeholder="e.g. vaikunta_dwara_rules.txt">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="input-group">
+            <label>Source Type</label>
+            <select id="doc-source-type">
+              <option value="Official TTD Manual" selected>Official TTD Manual</option>
+              <option value="Circular / Government Order">Circular / Government Order</option>
+              <option value="Pilgrim Guide">Pilgrim Guide</option>
+              <option value="Manual Upload">Manual Upload</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label>Document Content (Paragraphs separated by double newlines will be chunked and indexed)</label>
+          <textarea id="doc-content" rows="8" placeholder="Paste official TTD regulations, guidelines, rules, or circular text here..." required></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline" onclick="closeDocModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-doc">
+            <span class="material-symbols-outlined">upload</span> Upload & Index
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATIONS -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
 
   <script src="app.js"></script>
 </body>

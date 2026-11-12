@@ -25,6 +25,7 @@ class Settings:
     # Super Admin Defaults
     ADMIN_USERNAME: str = os.getenv("ADMIN_USERNAME", "admin@tirumala.org")
     ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "SrivariAdmin2026!")
+    ADMIN_SECRET: str = os.getenv("ADMIN_SECRET", os.getenv("ADMIN_PASSWORD", "SrivariAdmin2026!"))
     ADMIN_FULL_NAME: str = os.getenv("ADMIN_FULL_NAME", "Srivari Admin Officer")
 
     # AI Model Settings

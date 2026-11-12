@@ -33,6 +33,7 @@ class Announcement(Base):
     publication_date = Column(DateTime, nullable=False, index=True)
     is_verified = Column(Boolean, nullable=False, default=True)
     is_quota_alert = Column(Boolean, nullable=False, default=False)
+    is_pinned = Column(Boolean, nullable=False, default=False, index=True)
     quota_date = Column(DateTime, nullable=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)

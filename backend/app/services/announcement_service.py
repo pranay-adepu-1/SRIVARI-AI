@@ -36,7 +36,7 @@ class AnnouncementService:
 
         total = query.count()
         offset = (page - 1) * limit
-        items = query.order_by(desc(Announcement.publication_date)).offset(offset).limit(limit).all()
+        items = query.order_by(desc(Announcement.is_pinned), desc(Announcement.publication_date)).offset(offset).limit(limit).all()
 
         bookmarked_ids = set()
         if user_id:
@@ -58,6 +58,7 @@ class AnnouncementService:
                 "publication_date": a.publication_date,
                 "is_verified": a.is_verified,
                 "is_quota_alert": a.is_quota_alert,
+                "is_pinned": getattr(a, "is_pinned", False),
                 "quota_date": a.quota_date,
                 "created_at": a.created_at,
                 "updated_at": a.updated_at,

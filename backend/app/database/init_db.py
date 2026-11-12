@@ -3,8 +3,10 @@ from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from app.database.base import Base
 from app.database.session import engine, SessionLocal
+from sqlalchemy import text
 from app.models.admin import Admin
 from app.models.announcement import AnnouncementCategory
+from app.models.document import KnowledgeDocument
 from app.models.setting import ApplicationSetting
 from app.security.hashing import hash_password
 from app.config import settings
@@ -123,7 +125,72 @@ def init_database():
                 db.add(ApplicationSetting(key=k, value=v))
         db.commit()
 
-        # 4. Ingest and Sync Official TTD Announcements into DB and RAG index
+        # 4. Safe SQLite migration helper for is_pinned column
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("ALTER TABLE announcements ADD COLUMN is_pinned BOOLEAN DEFAULT 0"))
+                conn.commit()
+        except Exception:
+            pass  # Column already exists
+
+        # 5. Seed Initial Knowledge Documents if empty
+        if db.query(KnowledgeDocument).count() == 0:
+            seed_docs = [
+                {
+                    "filename": "TTD_Darshan_Rules_and_Quotas_2026.txt",
+                    "title": "TTD ₹300 Special Entry Darshan Regulations & Reporting Rules",
+                    "source_type": "Official TTD Manual",
+                    "status": "Indexed",
+                    "chunk_count": 3,
+                    "content": (
+                        "The ₹300 Special Entry Darshan (Seeghra Darshan) is introduced by TTD to provide quick and organized darshan of Lord Venkateswara at Tirumala hills. Devotees must book slots strictly online in advance through the official portal https://ttdevasthanams.ap.gov.in/.\n\n"
+                        "Reporting details: Devotees must report at the Vaikuntam Queue Complex-1 (ATC Car Parking area) strictly according to the time slot printed on their booking receipt. Every devotee including children above 12 years must produce an original government identity card (Aadhaar, Passport, or Voter ID).\n\n"
+                        "Dress code for darshan: Strict traditional attire is mandatory. Men must wear Dhoti with Uttariyam, Kurta with Pyjama, or Lungi with Shirt. Women must wear Saree, Half-Saree (Pavada), or Chudidar with Dupatta/Chunni. Jeans, T-shirts, western outfits, shorts, and skirts are strictly prohibited."
+                    )
+                },
+                {
+                    "filename": "Srivari_Seva_Voluntary_Guidelines.txt",
+                    "title": "Srivari Seva Voluntary Service Guidelines & Reporting Sadan",
+                    "source_type": "Official TTD Manual",
+                    "status": "Indexed",
+                    "chunk_count": 3,
+                    "content": (
+                        "Srivari Seva is a self-less voluntary service dedicated to Lord Venkateswara. Devotees aged between 18 and 60 years who are physically and mentally fit can register online for General Srivari Seva and Parakamani Seva at https://ttdevasthanams.ap.gov.in/.\n\n"
+                        "Service tenure: General Srivari Seva is conducted for 7 days in Tirumala and Tirupati temples. Sevaks assist pilgrims at Laddu distribution counters, Annaprasadam complexes, queue lines, water distribution, and pilgrim guidance desks.\n\n"
+                        "Reporting rules: All selected Sevaks must assemble at Srivari Seva Sadan in Tirumala one day prior to service commencement. Sevaks must carry original Aadhaar card and printed registration slip. Traditional uniform (white Dhoti/Kurta for men, yellow or maroon Saree with scarf for women) is mandatory throughout the seva period."
+                    )
+                },
+                {
+                    "filename": "Tirumala_Accommodation_Rules.txt",
+                    "title": "Tirumala Accommodation Caution Deposit & Checkout Policy",
+                    "source_type": "Official TTD Manual",
+                    "status": "Indexed",
+                    "chunk_count": 3,
+                    "content": (
+                        "Accommodation in Tirumala is allotted for a maximum duration of 24 hours only. Devotees holding confirmed online darshan tickets can book rooms online at https://ttdevasthanams.ap.gov.in/. Offline current booking counters are available at CRO (Central Reservation Office) Tirumala subject to availability.\n\n"
+                        "Caution deposit policy: A refundable caution deposit is collected at the time of allotment along with room tariff. If the room is vacated within 24 hours in good condition, the caution deposit is automatically refunded to the original payment source within 3 to 7 working days.\n\n"
+                        "Guest house rules: All occupants must be present with original ID cards at the sub-allotment counter. Alcohol, smoking, non-vegetarian food, and gambling are strictly prohibited across all Tirumala guest houses and cottages."
+                    )
+                },
+                {
+                    "filename": "TTD_Traditional_Dress_Code_Mandate.txt",
+                    "title": "TTD Sacred Dress Code Mandate & Prohibited Electronics",
+                    "source_type": "Official TTD Manual",
+                    "status": "Indexed",
+                    "chunk_count": 2,
+                    "content": (
+                        "TTD strictly enforces Vedic and traditional dress code for all pilgrims entering Vaikuntam Queue Complex and the sanctum sanctorum of Lord Venkateswara temple.\n\n"
+                        "Mandatory dress code: Men: White or cream Dhoti / Vesti with Melangi / Uttariyam, or Kurta with Pyjama. Women: Saree, Half-Saree (Langa Voni), or Chudidar / Salwar Kameez with Dupatta / Chunni properly draped. Children: Traditional dress or decent modest clothing.\n\n"
+                        "Prohibited items: Mobile phones, smart watches, digital cameras, audio/video recorders, earphones, power banks, tobacco, matchboxes, and sharp objects are strictly prohibited beyond the scanning security gates at Vaikuntam Queue Complex."
+                    )
+                }
+            ]
+            for doc_item in seed_docs:
+                db.add(KnowledgeDocument(**doc_item))
+            db.commit()
+            logger.info("Default TTD knowledge documents seeded.")
+
+        # 6. Ingest and Sync Official TTD Announcements into DB and RAG index
         scraper = TTDScraperService(db)
         scraper.sync_news_sync()
         logger.info("Database initialization and verified TTD announcements ingestion complete.")

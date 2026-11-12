@@ -213,7 +213,7 @@ class TTDScraperService:
 
     def refresh_search_index(self):
         """
-        Loads all verified announcements into the in-memory RAG hybrid index.
+        Loads all verified announcements and indexed knowledge documents into the in-memory RAG hybrid index.
         """
         all_announcements = self.db.query(Announcement).filter(Announcement.is_verified == True).all()
         doc_list = []
@@ -226,8 +226,37 @@ class TTDScraperService:
                 "content_te": a.content_te,
                 "source_url": a.source_url,
                 "source_domain": a.source_domain,
+                "source_type": "Official Announcement",
                 "publication_date": a.publication_date.isoformat(),
-                "is_quota_alert": a.is_quota_alert
+                "is_quota_alert": a.is_quota_alert,
+                "is_pinned": getattr(a, "is_pinned", False)
             })
+
+        # Load indexed Knowledge Documents with chunking
+        try:
+            from app.models.document import KnowledgeDocument
+            all_documents = self.db.query(KnowledgeDocument).filter(KnowledgeDocument.status == "Indexed").all()
+            for doc in all_documents:
+                raw_chunks = [c.strip() for c in doc.content.split("\n\n") if len(c.strip()) > 20]
+                if not raw_chunks:
+                    raw_chunks = [doc.content.strip()]
+                for idx, chunk in enumerate(raw_chunks):
+                    doc_list.append({
+                        "id": f"{doc.id}_c{idx}",
+                        "document_id": doc.id,
+                        "title_en": doc.title,
+                        "title_te": doc.title,
+                        "content_en": chunk,
+                        "content_te": chunk,
+                        "source_url": settings.TTD_INFO_URL,
+                        "source_domain": "ttd-knowledge-base",
+                        "source_type": "Knowledge Document",
+                        "filename": doc.filename,
+                        "publication_date": doc.created_at.isoformat(),
+                        "is_quota_alert": False
+                    })
+        except Exception as e:
+            logger.warning(f"Error loading knowledge documents into index: {e}")
+
         search_engine.index_documents(doc_list)
-        logger.info(f"RAG search engine updated with {len(doc_list)} verified documents.")
+        logger.info(f"RAG search engine updated with {len(doc_list)} verified documents and chunks.")

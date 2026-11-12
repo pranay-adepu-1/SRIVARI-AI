@@ -19,7 +19,75 @@ const modal = document.getElementById('announcement-modal');
 const announcementForm = document.getElementById('announcement-form');
 const announcementSearch = document.getElementById('announcement-search');
 
-// INITIALIZATION (Strict Authentication Required)
+const docModal = document.getElementById('document-modal');
+const docForm = document.getElementById('document-form');
+const docSearch = document.getElementById('document-search');
+const btnUploadDoc = document.getElementById('btn-upload-document');
+const btnRefreshDocs = document.getElementById('btn-refresh-docs');
+
+const ragQueryInput = document.getElementById('rag-query-input');
+const ragTopkSelect = document.getElementById('rag-topk-select');
+const btnRunRAGTest = document.getElementById('btn-run-rag-test');
+const ragResultsContainer = document.getElementById('rag-results-container');
+
+// TOAST NOTIFICATIONS
+function showToast(message, type = 'info', duration = 4000) {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  
+  const icons = {
+    success: 'check_circle',
+    error: 'error',
+    warning: 'warning',
+    info: 'info'
+  };
+
+  toast.innerHTML = `
+    <span class="material-symbols-outlined">${icons[type] || 'info'}</span>
+    <span class="toast-message">${escapeHtml(message)}</span>
+    <button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
+  `;
+
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add('fade-out');
+    setTimeout(() => toast.remove(), 300);
+  }, duration);
+}
+
+// CENTRALIZED FETCH HELPER
+async function adminFetch(url, options = {}) {
+  const headers = { ...(options.headers || {}) };
+  if (authToken && !headers['Authorization']) {
+    headers['Authorization'] = `Bearer ${authToken}`;
+  }
+
+  const config = {
+    ...options,
+    headers,
+    credentials: 'include'
+  };
+
+  try {
+    const res = await fetch(url, config);
+    if (res.status === 401) {
+      showToast('Administrative session expired or unauthorized. Please re-authenticate.', 'error');
+      showLogin();
+      throw new Error('Unauthorized');
+    }
+    return res;
+  } catch (err) {
+    if (err.message !== 'Unauthorized') {
+      showToast('Network error: unable to reach server. Please check your connection.', 'error');
+    }
+    throw err;
+  }
+}
+
+// INITIALIZATION
 document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
 
@@ -42,8 +110,13 @@ function setupEventListeners() {
       const res = await fetch(`${API_BASE}/auth/admin-login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ username, password })
       });
+
+      if (res.status === 429) {
+        throw new Error('Rate limit exceeded: 5 failed attempts reached. Please wait 15 minutes.');
+      }
 
       if (!res.ok) {
         throw new Error('Invalid administrative credentials.');
@@ -54,10 +127,12 @@ function setupEventListeners() {
       currentAdmin = data.admin;
       localStorage.setItem('srivari_admin_token', authToken);
       localStorage.setItem('srivari_admin_user', JSON.stringify(currentAdmin));
+      showToast('Authenticated successfully as Admin Officer.', 'success');
       showDashboard();
     } catch (err) {
       loginError.textContent = err.message || 'Authentication failed.';
       loginError.classList.remove('hidden');
+      showToast(err.message || 'Authentication failed.', 'error');
     }
   });
 
@@ -72,7 +147,8 @@ function setupEventListeners() {
       try {
         const res = await fetch(`${API_BASE}/auth/admin-quick-access`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include'
         });
         if (!res.ok) throw new Error('Quick access endpoint failed.');
         const data = await res.json();
@@ -80,6 +156,7 @@ function setupEventListeners() {
         currentAdmin = data.admin;
         localStorage.setItem('srivari_admin_token', authToken);
         localStorage.setItem('srivari_admin_user', JSON.stringify(currentAdmin));
+        showToast('Entered Admin Portal successfully.', 'success');
         showDashboard();
       } catch (err) {
         // Fallback: auto-fill default admin credentials and submit login form
@@ -94,11 +171,15 @@ function setupEventListeners() {
   }
 
   // Logout
-  btnLogout.addEventListener('click', () => {
+  btnLogout.addEventListener('click', async () => {
+    try {
+      await fetch(`${API_BASE}/auth/admin-logout`, { method: 'POST', credentials: 'include' });
+    } catch (e) {}
     localStorage.removeItem('srivari_admin_token');
     localStorage.removeItem('srivari_admin_user');
     authToken = null;
     currentAdmin = null;
+    showToast('Logged out of Admin Portal.', 'info');
     showLogin();
   });
 
@@ -131,6 +212,47 @@ function setupEventListeners() {
   // Announcement Form Submit
   announcementForm.addEventListener('submit', handleAnnouncementSubmit);
 
+  // Knowledge Base Document Controls
+  if (btnUploadDoc) btnUploadDoc.addEventListener('click', openDocModal);
+  if (btnRefreshDocs) {
+    btnRefreshDocs.addEventListener('click', () => {
+      loadDocumentsTable(docSearch ? docSearch.value : '');
+      showToast('Knowledge sources refreshed.', 'info');
+    });
+  }
+  if (docForm) docForm.addEventListener('submit', handleDocumentSubmit);
+  if (docSearch) {
+    let docTimeout;
+    docSearch.addEventListener('input', () => {
+      clearTimeout(docTimeout);
+      docTimeout = setTimeout(() => {
+        loadDocumentsTable(docSearch.value);
+      }, 300);
+    });
+  }
+
+  // RAG Retrieval Test Controls
+  if (btnRunRAGTest) {
+    btnRunRAGTest.addEventListener('click', () => {
+      runRAGTest(ragQueryInput.value, parseInt(ragTopkSelect.value, 10));
+    });
+  }
+  if (ragQueryInput) {
+    ragQueryInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        runRAGTest(ragQueryInput.value, parseInt(ragTopkSelect.value, 10));
+      }
+    });
+  }
+  document.querySelectorAll('.rag-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const query = chip.getAttribute('data-query');
+      if (ragQueryInput) ragQueryInput.value = query;
+      runRAGTest(query, parseInt(ragTopkSelect.value, 10));
+    });
+  });
+
   // Notification Broadcast Form Submit
   document.getElementById('notification-form').addEventListener('submit', handleNotificationBroadcast);
 
@@ -146,13 +268,14 @@ function showLogin() {
 function showDashboard() {
   loginContainer.classList.add('hidden');
   appContainer.classList.remove('hidden');
-  document.getElementById('logged-admin-name').textContent = currentAdmin.full_name || 'Admin Officer';
-  document.getElementById('logged-admin-role').textContent = currentAdmin.role || 'Super Admin';
+  document.getElementById('logged-admin-name').textContent = (currentAdmin && currentAdmin.full_name) || 'Admin Officer';
+  document.getElementById('logged-admin-role').textContent = (currentAdmin && currentAdmin.role) || 'Super Admin';
 
   loadDashboardStats();
   loadCategories();
   loadRecentAnnouncements();
   loadAnnouncementsTable();
+  loadDocumentsTable();
 }
 
 function switchTab(tabName) {
@@ -165,8 +288,10 @@ function switchTab(tabName) {
   });
 
   const titles = {
-    'dashboard': ['Dashboard Overview', 'Real-time status of TTD news indexing and devotee services.'],
-    'announcements': ['Official Announcements', 'Manage indexed press releases, quotas, and verified updates.'],
+    'dashboard': ['Dashboard Overview', 'Real-time status of TTD news indexing, knowledge documents, and devotee services.'],
+    'announcements': ['Official Announcements', 'Manage indexed press releases, quotas, pinned alerts, and verified updates.'],
+    'knowledge-base': ['Knowledge Base & Documents', 'Manage indexed TTD pilgrimage guidelines, rules, circulars, and source chunks.'],
+    'rag-test': ['RAG Retrieval Test', 'Inspect semantic search chunks, similarity scores, and guardrails in real-time.'],
     'scraper': ['TTD Ingestion Engine', 'Automated crawler for news.tirumala.org and booking notices.'],
     'notifications': ['Push Broadcast', 'Dispatch immediate quota alerts and daily digests to devotees.'],
     'audit': ['Audit Trail', 'Cryptographic compliance records of administrative operations.'],
@@ -178,55 +303,58 @@ function switchTab(tabName) {
     document.getElementById('page-subtitle').textContent = titles[tabName][1];
   }
 
-  if (tabName === 'audit') loadAuditLogs();
-  if (tabName === 'notifications') loadNotificationHistory();
-}
-
-// DASHBOARD DATA FETCHING
-async function loadDashboardStats() {
-  try {
-    const res = await fetch(`${API_BASE}/admin/dashboard-stats`, {
-      headers: { 'Authorization': `Bearer ${authToken}` }
-    });
-    if (!res.ok) return;
-    const data = await res.json();
-    document.getElementById('stat-announcements').textContent = data.total_announcements;
-    document.getElementById('stat-verified').textContent = data.verified_announcements;
-    document.getElementById('stat-quotas').textContent = data.quota_alerts;
-    document.getElementById('stat-users').textContent = data.total_users;
-  } catch (err) {
-    console.error('Failed to load stats:', err);
+  if (tabName === 'knowledge-base') {
+    loadDocumentsTable();
   }
 }
 
+// DASHBOARD STATS
+async function loadDashboardStats() {
+  try {
+    const res = await adminFetch(`${API_BASE}/admin/dashboard-stats`);
+    const data = await res.json();
+
+    document.getElementById('stat-announcements').textContent = data.total_announcements || 0;
+    document.getElementById('stat-verified').textContent = data.verified_announcements || 0;
+    document.getElementById('stat-quota').textContent = data.quota_alerts || 0;
+    document.getElementById('stat-users').textContent = data.total_users || 0;
+  } catch (err) {
+    console.error('Failed to load dashboard stats:', err);
+  }
+}
+
+// CATEGORIES
 async function loadCategories() {
   try {
-    const res = await fetch(`${API_BASE}/announcements/categories`);
-    if (!res.ok) return;
+    const res = await fetch(`${API_BASE}/announcements/categories`, { credentials: 'include' });
     categoriesCache = await res.json();
     const select = document.getElementById('modal-category');
-    select.innerHTML = categoriesCache.map(c => `<option value="${c.id}">${c.name_en} (${c.name_te})</option>`).join('');
+    select.innerHTML = categoriesCache.map(c => `
+      <option value="${c.id}">${escapeHtml(c.name_en)} (${escapeHtml(c.name_te)})</option>
+    `).join('');
   } catch (err) {
     console.error('Failed to load categories:', err);
   }
 }
 
+// RECENT ANNOUNCEMENTS
 async function loadRecentAnnouncements() {
   try {
-    const res = await fetch(`${API_BASE}/announcements?limit=5`);
+    const res = await fetch(`${API_BASE}/announcements?limit=5`, { credentials: 'include' });
     const data = await res.json();
-    const list = document.getElementById('dashboard-recent-list');
+    const container = document.getElementById('recent-announcements-list');
+
     if (!data.items || data.items.length === 0) {
-      list.innerHTML = '<p class="text-muted">No announcements indexed yet.</p>';
+      container.innerHTML = '<p class="text-muted">No announcements indexed yet.</p>';
       return;
     }
 
-    list.innerHTML = data.items.map(item => `
-      <div class="integration-item">
-        <span class="material-symbols-outlined" style="color: var(--maroon-primary)">campaign</span>
-        <div class="integration-meta">
-          <strong>${escapeHtml(item.title_en)}</strong>
+    container.innerHTML = data.items.map(item => `
+      <div class="announcement-item">
+        <div class="announcement-info">
+          <h4>${item.is_pinned ? '<span class="badge-pinned">📌 Pinned</span> ' : ''}${escapeHtml(item.title_en)}</h4>
           <p>${escapeHtml(item.title_te)}</p>
+          <small class="meta">${new Date(item.publication_date).toLocaleDateString()} • ${escapeHtml(item.source_domain)}</small>
         </div>
         <span class="badge ${item.is_quota_alert ? 'badge-orange' : 'badge-gold'}">
           ${item.is_quota_alert ? 'Quota Release' : 'Notice'}
@@ -238,18 +366,19 @@ async function loadRecentAnnouncements() {
   }
 }
 
+// ANNOUNCEMENTS TABLE
 async function loadAnnouncementsTable(searchTerm = '') {
   try {
     const url = searchTerm 
       ? `${API_BASE}/announcements?search=${encodeURIComponent(searchTerm)}&limit=50`
       : `${API_BASE}/announcements?limit=50`;
 
-    const res = await fetch(url);
+    const res = await fetch(url, { credentials: 'include' });
     const data = await res.json();
     const tbody = document.getElementById('announcements-table-body');
 
     if (!data.items || data.items.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px;">No announcements found.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px;">No announcements found.</td></tr>';
       return;
     }
 
@@ -262,11 +391,17 @@ async function loadAnnouncementsTable(searchTerm = '') {
         <td><span class="badge badge-gold">General</span></td>
         <td><a href="${a.source_url}" target="_blank" style="color:var(--maroon-primary); text-decoration:none;">View TTD Link ↗</a></td>
         <td>${new Date(a.publication_date).toLocaleDateString()}</td>
+        <td>${a.is_pinned ? '<span class="badge-pinned">📌 Pinned</span>' : '<span style="color:var(--text-muted); font-size:12px;">Standard</span>'}</td>
         <td>${a.is_quota_alert ? '<span class="badge badge-orange">YES</span>' : 'No'}</td>
         <td>${a.is_verified ? '<span class="badge badge-green">VERIFIED</span>' : '<span class="badge badge-red">Pending</span>'}</td>
         <td>
-          <button class="btn btn-outline btn-sm" onclick="editAnnouncement('${a.id}')">Edit</button>
-          <button class="btn btn-outline btn-sm" style="color:var(--danger-color)" onclick="deleteAnnouncement('${a.id}')">Delete</button>
+          <div style="display:flex; gap:6px;">
+            <button class="btn btn-outline btn-sm btn-pin" onclick="togglePinAnnouncement('${a.id}', ${!a.is_pinned})" title="Toggle Pin to Top">
+              ${a.is_pinned ? 'Unpin' : '📌 Pin'}
+            </button>
+            <button class="btn btn-outline btn-sm" onclick="editAnnouncement('${a.id}')">Edit</button>
+            <button class="btn btn-outline btn-sm" style="color:var(--danger-color)" onclick="deleteAnnouncement('${a.id}')">Delete</button>
+          </div>
         </td>
       </tr>
     `).join('');
@@ -281,11 +416,7 @@ async function runScraperSync() {
   logBox.textContent += `\n[${new Date().toLocaleTimeString()}] Triggering TTD scraper poller...`;
 
   try {
-    const res = await fetch(`${API_BASE}/admin/scraper/sync`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${authToken}` }
-    });
-
+    const res = await adminFetch(`${API_BASE}/admin/scraper/sync`, { method: 'POST' });
     const data = await res.json();
     logBox.textContent += `\n[SUCCESS] Sync completed at ${data.timestamp}`;
     logBox.textContent += `\n- New Announcements Added: ${data.new_announcements}`;
@@ -293,6 +424,7 @@ async function runScraperSync() {
     logBox.textContent += `\n- Total Announcements in Knowledge Base: ${data.total_indexed}\n`;
 
     document.getElementById('scraper-last-run').textContent = `Last run: ${new Date().toLocaleTimeString()} (Indexed ${data.total_indexed} records)`;
+    showToast(`TTD news synced successfully (${data.new_announcements} new, ${data.existing_announcements} updated).`, 'success');
     loadDashboardStats();
     loadAnnouncementsTable();
     loadRecentAnnouncements();
@@ -306,6 +438,7 @@ function openModalForCreate() {
   document.getElementById('modal-title').textContent = 'New Official Announcement';
   document.getElementById('modal-announcement-id').value = '';
   document.getElementById('announcement-form').reset();
+  document.getElementById('modal-is-pinned').checked = false;
   modal.classList.remove('hidden');
 }
 
@@ -316,15 +449,31 @@ function closeModal() {
 async function handleAnnouncementSubmit(e) {
   e.preventDefault();
   const id = document.getElementById('modal-announcement-id').value;
+  const title_en = document.getElementById('modal-title-en').value.trim();
+  const title_te = document.getElementById('modal-title-te').value.trim();
+  const content_en = document.getElementById('modal-content-en').value.trim();
+  const content_te = document.getElementById('modal-content-te').value.trim();
+  const source_url = document.getElementById('modal-source-url').value.trim();
+  const category_id = document.getElementById('modal-category').value;
+  const is_quota_alert = document.getElementById('modal-is-quota').checked;
+  const is_verified = document.getElementById('modal-is-verified').checked;
+  const is_pinned = document.getElementById('modal-is-pinned').checked;
+
+  if (!title_en || !title_te || !content_en || !content_te || !source_url) {
+    showToast('Validation error: Please fill in all required title, content, and source URL fields.', 'warning');
+    return;
+  }
+
   const payload = {
-    title_en: document.getElementById('modal-title-en').value.trim(),
-    title_te: document.getElementById('modal-title-te').value.trim(),
-    content_en: document.getElementById('modal-content-en').value.trim(),
-    content_te: document.getElementById('modal-content-te').value.trim(),
-    source_url: document.getElementById('modal-source-url').value.trim(),
-    category_id: document.getElementById('modal-category').value,
-    is_quota_alert: document.getElementById('modal-is-quota').checked,
-    is_verified: document.getElementById('modal-is-verified').checked,
+    title_en,
+    title_te,
+    content_en,
+    content_te,
+    source_url,
+    category_id,
+    is_quota_alert,
+    is_verified,
+    is_pinned,
     publication_date: new Date().toISOString()
   };
 
@@ -332,28 +481,30 @@ async function handleAnnouncementSubmit(e) {
     const url = id ? `${API_BASE}/admin/announcements/${id}` : `${API_BASE}/admin/announcements`;
     const method = id ? 'PUT' : 'POST';
 
-    const res = await fetch(url, {
+    const res = await adminFetch(url, {
       method,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
 
-    if (!res.ok) throw new Error('Failed to save announcement');
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Failed to save announcement');
+    }
 
     closeModal();
+    showToast(`Announcement saved successfully${is_pinned ? ' and pinned to top of devotee feed!' : '.'}`, 'success');
     loadDashboardStats();
     loadAnnouncementsTable();
+    loadRecentAnnouncements();
   } catch (err) {
-    alert(err.message);
+    showToast(err.message || 'Error saving announcement.', 'error');
   }
 }
 
 async function editAnnouncement(id) {
   try {
-    const res = await fetch(`${API_BASE}/announcements/${id}`);
+    const res = await fetch(`${API_BASE}/announcements/${id}`, { credentials: 'include' });
     const data = await res.json();
 
     document.getElementById('modal-title').textContent = 'Edit Announcement';
@@ -365,62 +516,268 @@ async function editAnnouncement(id) {
     document.getElementById('modal-source-url').value = data.source_url;
     document.getElementById('modal-is-quota').checked = data.is_quota_alert;
     document.getElementById('modal-is-verified').checked = data.is_verified;
+    document.getElementById('modal-is-pinned').checked = !!data.is_pinned;
 
     modal.classList.remove('hidden');
   } catch (err) {
-    alert('Failed to load announcement for editing');
+    showToast('Failed to load announcement for editing.', 'error');
+  }
+}
+
+async function togglePinAnnouncement(id, willPin) {
+  try {
+    const res = await adminFetch(`${API_BASE}/admin/announcements/${id}/pin`, { method: 'PUT' });
+    if (!res.ok) throw new Error('Failed to toggle pin priority.');
+    showToast(willPin ? 'Announcement pinned to top of devotee feed!' : 'Announcement unpinned.', 'success');
+    loadAnnouncementsTable(announcementSearch.value);
+    loadRecentAnnouncements();
+  } catch (err) {
+    showToast(err.message || 'Failed to toggle pin state.', 'error');
   }
 }
 
 async function deleteAnnouncement(id) {
-  if (!confirm('Are you sure you want to delete this official announcement?')) return;
+  if (!confirm('Are you sure you want to delete this official announcement? It will be permanently removed from the public feed and RAG index.')) return;
   try {
-    const res = await fetch(`${API_BASE}/admin/announcements/${id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${authToken}` }
-    });
-    if (!res.ok) throw new Error('Deletion failed');
+    const res = await adminFetch(`${API_BASE}/admin/announcements/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Deletion failed.');
+    showToast('Announcement deleted successfully.', 'success');
     loadDashboardStats();
     loadAnnouncementsTable();
+    loadRecentAnnouncements();
   } catch (err) {
-    alert(err.message);
+    showToast(err.message || 'Deletion failed.', 'error');
+  }
+}
+
+// KNOWLEDGE BASE & DOCUMENTS MANAGEMENT
+function openDocModal() {
+  document.getElementById('document-form').reset();
+  docModal.classList.remove('hidden');
+}
+
+function closeDocModal() {
+  docModal.classList.add('hidden');
+}
+
+async function loadDocumentsTable(searchTerm = '') {
+  const tbody = document.getElementById('documents-table-body');
+  if (!tbody) return;
+
+  try {
+    const res = await adminFetch(`${API_BASE}/admin/documents`);
+    const data = await res.json();
+
+    let items = data.items || [];
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      items = items.filter(d => 
+        (d.title && d.title.toLowerCase().includes(q)) || 
+        (d.filename && d.filename.toLowerCase().includes(q))
+      );
+    }
+
+    if (items.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">No knowledge documents indexed yet. Click "Upload New Source" above.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = items.map(doc => `
+      <tr>
+        <td>
+          <strong>${escapeHtml(doc.title)}</strong><br>
+          <code style="color:var(--text-muted); font-size:11px;">${escapeHtml(doc.filename)}</code>
+        </td>
+        <td><span class="badge badge-gold">${escapeHtml(doc.source_type || 'Manual Upload')}</span></td>
+        <td>${new Date(doc.created_at).toLocaleDateString()}</td>
+        <td><span class="badge badge-orange">${doc.chunk_count} Chunks</span></td>
+        <td>
+          <span class="${doc.status === 'Indexed' ? 'badge-indexed' : 'badge-failed'}">
+            ● ${escapeHtml(doc.status || 'Indexed')}
+          </span>
+        </td>
+        <td>
+          <button class="btn btn-outline btn-sm" style="color:var(--danger-color)" onclick="deleteDocument('${doc.id}', '${escapeHtml(doc.filename)}')">
+            Delete
+          </button>
+        </td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--danger-color);">Failed to load knowledge documents: ${escapeHtml(err.message)}</td></tr>`;
+  }
+}
+
+async function handleDocumentSubmit(e) {
+  e.preventDefault();
+  const title = document.getElementById('doc-title').value.trim();
+  const filename = document.getElementById('doc-filename').value.trim();
+  const source_type = document.getElementById('doc-source-type').value;
+  const content = document.getElementById('doc-content').value.trim();
+
+  if (!title || !content) {
+    showToast('Validation error: Document Title and Content are required.', 'warning');
+    return;
+  }
+
+  const btn = document.getElementById('btn-submit-doc');
+  btn.disabled = true;
+  const originalHTML = btn.innerHTML;
+  btn.innerHTML = '<span class="material-symbols-outlined">hourglass_top</span> Indexing Chunks...';
+
+  try {
+    const res = await adminFetch(`${API_BASE}/admin/documents/upload`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, filename, source_type, content })
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Failed to upload document');
+    }
+
+    const data = await res.json();
+    showToast(`Document "${data.filename}" uploaded and indexed into ${data.chunk_count} chunks!`, 'success');
+    closeDocModal();
+    loadDocumentsTable();
+    loadDashboardStats();
+  } catch (err) {
+    showToast(err.message || 'Document upload failed.', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalHTML;
+  }
+}
+
+async function deleteDocument(id, filename) {
+  if (!confirm(`Are you sure you want to delete "${filename}" from the knowledge base? This will immediately remove all its chunks from the RAG search index.`)) return;
+
+  try {
+    const res = await adminFetch(`${API_BASE}/admin/documents/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Deletion failed.');
+    showToast(`Document "${filename}" deleted and RAG index refreshed.`, 'success');
+    loadDocumentsTable(docSearch ? docSearch.value : '');
+    loadDashboardStats();
+  } catch (err) {
+    showToast(err.message || 'Failed to delete knowledge document.', 'error');
+  }
+}
+
+// RAG RETRIEVAL TEST
+async function runRAGTest(query, top_k = 5) {
+  query = (query || '').trim();
+  if (!query) {
+    showToast('Validation error: Please enter a query to test RAG retrieval.', 'warning');
+    return;
+  }
+
+  if (btnRunRAGTest) {
+    btnRunRAGTest.disabled = true;
+    btnRunRAGTest.innerHTML = '<span class="material-symbols-outlined">hourglass_top</span> Retrieving...';
+  }
+
+  ragResultsContainer.innerHTML = `
+    <div style="text-align:center; padding:30px; color:var(--text-muted); background:#FFFFFF; border-radius:10px;">
+      <div class="dot live" style="margin: 0 auto 10px;"></div>
+      <p>Searching hybrid vector and BM25 index across announcements & knowledge documents...</p>
+    </div>
+  `;
+
+  try {
+    const res = await adminFetch(`${API_BASE}/admin/rag/test`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, top_k })
+    });
+
+    if (!res.ok) throw new Error('RAG retrieval test failed.');
+    const data = await res.json();
+
+    showToast(`Retrieved ${data.total_retrieved} matching source chunks.`, 'info');
+
+    if (!data.results || data.results.length === 0) {
+      ragResultsContainer.innerHTML = `
+        <div class="rag-results-header">
+          <strong>No matches found for "${escapeHtml(query)}"</strong>
+          <small>Try adding keywords or index relevant documents in the Knowledge Base tab.</small>
+        </div>
+      `;
+      return;
+    }
+
+    ragResultsContainer.innerHTML = `
+      <div class="rag-results-header">
+        <div>
+          <strong>Query: "${escapeHtml(query)}"</strong>
+          <span style="font-size:12px; color:var(--text-muted); margin-left:8px;">(${data.total_retrieved} ranked chunks retrieved)</span>
+        </div>
+        <span class="badge badge-gold">Top ${data.results.length} Matches</span>
+      </div>
+      ${data.results.map(r => `
+        <div class="rag-chunk-card">
+          <div class="rag-chunk-meta">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="rag-rank-badge">#${r.rank} Match</span>
+              <strong>${escapeHtml(r.title)}</strong>
+              ${r.filename ? `<code style="font-size:11px; color:var(--text-muted);">(${escapeHtml(r.filename)})</code>` : ''}
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="rag-source-badge">${escapeHtml(r.source_type)}</span>
+              <span class="rag-score-badge">Similarity Score: ${r.score}</span>
+            </div>
+          </div>
+          <div class="rag-chunk-text">${escapeHtml(r.chunk_content)}</div>
+          ${r.source_url ? `<div style="font-size:12px;"><a href="${r.source_url}" target="_blank" style="color:var(--maroon-primary); text-decoration:none;">Official Link: ${escapeHtml(r.source_url)} ↗</a></div>` : ''}
+        </div>
+      `).join('')}
+    `;
+  } catch (err) {
+    ragResultsContainer.innerHTML = `<div style="color:var(--danger-color); padding:20px; text-align:center;">Retrieval test failed: ${escapeHtml(err.message)}</div>`;
+  } finally {
+    if (btnRunRAGTest) {
+      btnRunRAGTest.disabled = false;
+      btnRunRAGTest.innerHTML = '<span class="material-symbols-outlined">play_arrow</span> Run Retrieval Test';
+    }
   }
 }
 
 // NOTIFICATION BROADCAST
 async function handleNotificationBroadcast(e) {
   e.preventDefault();
-  const payload = {
-    title_en: document.getElementById('notif-title-en').value.trim(),
-    title_te: document.getElementById('notif-title-te').value.trim(),
-    body_en: document.getElementById('notif-body-en').value.trim(),
-    body_te: document.getElementById('notif-body-te').value.trim(),
-    notification_type: document.getElementById('notif-type').value
-  };
+  const title_en = document.getElementById('notif-title-en').value.trim();
+  const title_te = document.getElementById('notif-title-te').value.trim();
+  const body_en = document.getElementById('notif-body-en').value.trim();
+  const body_te = document.getElementById('notif-body-te').value.trim();
+  const notification_type = document.getElementById('notif-type').value;
+
+  if (!title_en || !title_te || !body_en || !body_te) {
+    showToast('Validation error: All notification title and body fields are required.', 'warning');
+    return;
+  }
+
+  const payload = { title_en, title_te, body_en, body_te, notification_type };
 
   try {
-    const res = await fetch(`${API_BASE}/admin/notifications/broadcast`, {
+    const res = await adminFetch(`${API_BASE}/admin/notifications/broadcast`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
 
     if (!res.ok) throw new Error('Broadcast failed');
     const result = await res.json();
-    alert(`Broadcast dispatched successfully to registered devotees!`);
+    showToast('Push alert broadcast dispatched successfully to devotees!', 'success');
     document.getElementById('notification-form').reset();
     loadNotificationHistory();
   } catch (err) {
-    alert(err.message);
+    showToast(err.message || 'Notification broadcast failed.', 'error');
   }
 }
 
 async function loadNotificationHistory() {
   try {
-    const res = await fetch(`${API_BASE}/notifications/history`);
+    const res = await fetch(`${API_BASE}/notifications/history`, { credentials: 'include' });
     const items = await res.json();
     const list = document.getElementById('notification-history-list');
 
@@ -448,9 +805,7 @@ async function loadNotificationHistory() {
 // AUDIT LOGS
 async function loadAuditLogs() {
   try {
-    const res = await fetch(`${API_BASE}/admin/audit-logs`, {
-      headers: { 'Authorization': `Bearer ${authToken}` }
-    });
+    const res = await adminFetch(`${API_BASE}/admin/audit-logs`);
     const logs = await res.json();
     const tbody = document.getElementById('audit-table-body');
 
@@ -482,7 +837,6 @@ async function handleTestChat(e) {
 
   const chatContainer = document.getElementById('test-chat-messages');
 
-  // Add User bubble
   const userBubble = document.createElement('div');
   userBubble.className = 'chat-bubble user';
   userBubble.textContent = query;
@@ -490,7 +844,6 @@ async function handleTestChat(e) {
   input.value = '';
   chatContainer.scrollTop = chatContainer.scrollHeight;
 
-  // Add Loading Bot bubble
   const botBubble = document.createElement('div');
   botBubble.className = 'chat-bubble bot';
   botBubble.innerHTML = '<div class="sender-name">Srivari AI</div><p>Searching official TTD knowledge base...</p>';
@@ -498,10 +851,10 @@ async function handleTestChat(e) {
   chatContainer.scrollTop = chatContainer.scrollHeight;
 
   try {
-    // Generate devotee device handshake token if needed
     const devoteeRes = await fetch(`${API_BASE}/auth/devotee-init`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ device_id: 'admin_test_terminal_01' })
     });
     const devoteeData = await devoteeRes.json();
@@ -512,6 +865,7 @@ async function handleTestChat(e) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${devoteeData.access_token}`
       },
+      credentials: 'include',
       body: JSON.stringify({ query })
     });
 
@@ -536,4 +890,3 @@ function escapeHtml(str) {
   if (!str) return '';
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
-

@@ -28,6 +28,7 @@ class AnnouncementBase(BaseModel):
     publication_date: datetime
     is_verified: bool = True
     is_quota_alert: bool = False
+    is_pinned: bool = False
     quota_date: Optional[datetime] = None
 
 class AnnouncementCreate(AnnouncementBase):
@@ -41,6 +42,7 @@ class AnnouncementUpdate(BaseModel):
     category_id: Optional[str] = None
     is_verified: Optional[bool] = None
     is_quota_alert: Optional[bool] = None
+    is_pinned: Optional[bool] = None
     quota_date: Optional[datetime] = None
 
 class AnnouncementResponse(AnnouncementBase):
