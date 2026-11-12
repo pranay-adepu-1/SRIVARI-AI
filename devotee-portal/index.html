@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Srivari AI (శ్రీవారి AI) - Tirumala Devotee Assistant</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Mandali&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <header class="navbar">
+    <div class="nav-container">
+      <a href="#" class="nav-brand">
+        <span class="tilak-icon">॥ శ్రీః ॥</span>
+        <div class="brand-text">
+          <h1>Srivari AI (శ్రీవారి AI)</h1>
+          <small>Tirumala Devotee Assistant</small>
+        </div>
+      </a>
+
+      <div class="nav-actions">
+        <button id="lang-toggle" class="btn btn-outline">తెలుగు</button>
+        <a href="https://ttdevasthanams.ap.gov.in/" target="_blank" rel="noopener" class="btn btn-gold">
+          <span class="material-symbols-outlined" style="font-size: 16px;">open_in_new</span> TTD Official Portal
+        </a>
+        <a href="/admin-ui/" class="btn btn-text">
+          <span class="material-symbols-outlined" style="font-size: 16px;">admin_panel_settings</span> Admin
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- DISCLAIMER BANNER -->
+  <div class="disclaimer-banner">
+    ⚠️ <strong>Devotee Notice:</strong> Srivari AI is an independent informational guide and is <strong>not</strong> officially affiliated with TTD. All bookings must be completed directly on <a href="https://ttdevasthanams.ap.gov.in/" target="_blank" rel="noopener">ttdevasthanams.ap.gov.in</a>.
+  </div>
+
+  <!-- MAIN CONTAINER -->
+  <main class="main-wrapper">
+    
+    <!-- HERO TITLE -->
+    <div class="hero-section">
+      <div class="hero-namam">॥ ॐ నమో వేంకటేశాయ ॥</div>
+      <h2 class="hero-title">Welcome to <span>Srivari AI</span></h2>
+      <p class="hero-subtitle">
+        Your intelligent guide for Lord Venkateswara Darshan timings, ₹300 tickets, Srivari Seva registration, Tirumala cottages, and official announcements.
+      </p>
+    </div>
+
+    <!-- MAIN GRID (Chat on Left, Official Feed on Right) -->
+    <div class="content-grid">
+      
+      <!-- CHAT COLUMN -->
+      <div class="chat-card">
+        <div class="chat-header">
+          <div class="chat-header-info">
+            <span class="material-symbols-outlined" style="color: var(--gold);">auto_awesome</span>
+            <div>
+              <h3>Ask Srivari Devotional Assistant</h3>
+              <small style="color: var(--text-muted); font-size: 0.75rem;">Verified TTD Data & RAG Engine</small>
+            </div>
+          </div>
+          <span class="badge-live">● Live Online</span>
+        </div>
+
+        <div id="chat-messages" class="chat-messages">
+          <div class="msg assistant">
+            <div class="msg-bubble">
+              <strong>Om Namo Venkatesaya! (ఓం నమో వేంకటేశాయ!)</strong><br><br>
+              Welcome to Srivari AI. How may I assist your pilgrimage today? You can ask questions in English or Telugu regarding ₹300 Special Entry Darshan, free Sarva Darshan tokens, Srivari Seva voluntary service, room bookings, laddu prasadam, or dress code.
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Questions Chips -->
+        <div id="quick-chips" class="quick-chips-wrapper">
+          <!-- Dynamically populated -->
+        </div>
+
+        <!-- Chat Input Bar -->
+        <form id="chat-form" class="chat-input-bar">
+          <input type="text" id="chat-input" placeholder="Ask in English or Telugu (e.g. ₹300 darshan rules)..." autocomplete="off" required>
+          <button type="submit" id="btn-send" class="btn btn-gold">
+            <span class="material-symbols-outlined">send</span> Ask
+          </button>
+        </form>
+      </div>
+
+      <!-- SIDE PANEL (Announcements & Guidelines) -->
+      <div class="side-panel">
+        
+        <!-- Announcements Feed -->
+        <div class="panel-card">
+          <div class="panel-card-header">
+            <h3><span class="material-symbols-outlined">campaign</span> Official TTD Announcements</h3>
+            <span style="font-size: 0.72rem; color: var(--gold);">Auto-Synced</span>
+          </div>
+          <div id="announcements-list" class="announcements-list">
+            <p style="color: var(--text-muted); font-size: 0.85rem;">Loading verified announcements...</p>
+          </div>
+        </div>
+
+        <!-- Quick Devotee Guidelines -->
+        <div class="panel-card">
+          <div class="panel-card-header">
+            <h3><span class="material-symbols-outlined">info</span> Quick Pilgrimage Guides</h3>
+          </div>
+          <div class="guides-grid">
+            <div class="guide-pill">
+              <strong>₹300 Darshan (SED)</strong>
+              <span>Online booking mandatory; Traditional attire required.</span>
+            </div>
+            <div class="guide-pill">
+              <strong>Srivari Seva</strong>
+              <span>Voluntary service (Ages 18-60); 100% free registration.</span>
+            </div>
+            <div class="guide-pill">
+              <strong>Accommodation</strong>
+              <span>Max 24-hr stay; Caution deposit auto-refunded to bank.</span>
+            </div>
+            <div class="guide-pill">
+              <strong>Dress Code</strong>
+              <span>Men: Dhoti/Pyjama; Women: Saree/Chudidar with Dupatta.</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="portal-footer">
+    <div class="footer-links">
+      <a href="https://ttdevasthanams.ap.gov.in/" target="_blank" rel="noopener">Official TTD Portal</a>
+      <a href="https://news.tirumala.org/" target="_blank" rel="noopener">TTD News</a>
+      <a href="https://www.tirumala.org/" target="_blank" rel="noopener">Tirumala Info</a>
+      <a href="/admin-ui/">Temple Administrator Portal</a>
+      <a href="/docs">REST API Documentation</a>
+      <a href="https://github.com/pranay-adepu-1/SRIVARI-AI" target="_blank" rel="noopener">GitHub Project</a>
+    </div>
+    <p class="footer-disclaimer">
+      Srivari AI (శ్రీవారి AI) is an independent non-commercial informational tool built to help pilgrims navigate official temple guidelines. It has no official affiliation with Tirumala Tirupati Devasthanams (TTD). Official darshan tickets, accommodation, and arjitha seva tokens must be booked strictly on <a href="https://ttdevasthanams.ap.gov.in/" target="_blank" rel="noopener" style="color: var(--gold);">ttdevasthanams.ap.gov.in</a>.
+    </p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

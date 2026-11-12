@@ -46,3 +46,4 @@ jobs:
           name: srivari-ai-release-apk
           path: android/build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
+

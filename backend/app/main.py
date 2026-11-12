@@ -112,13 +112,29 @@ admin_dir = next((d for d in admin_dirs if d.exists()), None)
 if admin_dir:
     app.mount("/admin-ui", StaticFiles(directory=str(admin_dir), html=True), name="admin_ui")
 
+# Mount Public Devotee Portal UI
+devotee_dirs = [
+    Path(__file__).resolve().parent.parent.parent / "devotee-portal",
+    Path(__file__).resolve().parent.parent / "devotee-portal",
+    Path.cwd() / "devotee-portal",
+    Path.cwd() / ".." / "devotee-portal"
+]
+devotee_dir = next((d for d in devotee_dirs if d.exists()), None)
+if devotee_dir:
+    app.mount("/portal", StaticFiles(directory=str(devotee_dir), html=True), name="devotee_portal")
+
 @app.get("/")
-def root():
+def root(request: Request):
+    accept = request.headers.get("accept", "")
+    if "text/html" in accept and devotee_dir and (devotee_dir / "index.html").exists():
+        return FileResponse(str(devotee_dir / "index.html"))
+
     return {
         "app": "Srivari AI (శ్రీవారి AI)",
         "tagline": "Your Intelligent Tirumala Assistant",
         "official_disclaimer": "Independent devotional informational assistant. Not affiliated with TTD.",
-        "api_docs": "/docs",
-        "admin_portal": "/admin-ui/"
+        "devotee_portal": "/portal",
+        "admin_portal": "/admin-ui/",
+        "api_docs": "/docs"
     }
 
