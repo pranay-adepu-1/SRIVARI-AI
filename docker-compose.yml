@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: srivari_ai_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_NAME=Srivari AI (శ్రీవారి AI)
+      - APP_ENV=production
+      - DEBUG=False
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DATABASE_URL=sqlite:///./srivari_ai.db
+      - SECRET_KEY=prod_srivari_ai_secret_key_tirumala_balaji_777_secure
+      - AI_PROVIDER=local
+      - SCRAPER_INTERVAL_HOURS=2
+      - TTD_NEWS_FEED_URL=https://news.tirumala.org/feed/
+    volumes:
+      - srivari_data:/app/data
+      - ./admin:/admin:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/system/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  srivari_data:
+

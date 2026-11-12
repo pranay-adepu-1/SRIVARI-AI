@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Srivari AI (శ్రీవారి AI) - Admin Portal</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+</head>
+<body>
+  <!-- LOGIN SCREEN -->
+  <div id="login-container" class="login-wrapper">
+    <div class="login-card">
+      <div class="login-header">
+        <div class="tilak-symbol">॥ ॐ నమో వేంకటేశాయ ॥</div>
+        <h1>Srivari AI</h1>
+        <p class="subtitle">శ్రీవారి AI - Devotee Assistant Admin Portal</p>
+      </div>
+
+      <form id="login-form">
+        <div class="input-group">
+          <label for="username">Admin Username</label>
+          <div class="input-with-icon">
+            <span class="material-symbols-outlined">person</span>
+            <input type="text" id="username" value="admin@tirumala.org" required>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label for="password">Password</label>
+          <div class="input-with-icon">
+            <span class="material-symbols-outlined">lock</span>
+            <input type="password" id="password" value="SrivariAdmin2026!" required>
+          </div>
+        </div>
+
+        <div id="login-error" class="error-badge hidden"></div>
+
+        <button type="submit" class="btn btn-primary btn-block">
+          <span class="material-symbols-outlined">login</span> Authenticate
+        </button>
+      </form>
+
+      <div class="disclaimer-mini">
+        <span class="material-symbols-outlined">security</span>
+        Authorized Administrative Personnel Only. Strictly Independent Informational Assistant.
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD APP -->
+  <div id="app-container" class="app-layout hidden">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-namam">॥ శ్రీః ॥</div>
+        <h2>Srivari AI</h2>
+        <span class="badge badge-gold">Admin v1.0</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-tab="dashboard">
+          <span class="material-symbols-outlined">dashboard</span> Dashboard
+        </button>
+        <button class="nav-item" data-tab="announcements">
+          <span class="material-symbols-outlined">campaign</span> Announcements
+        </button>
+        <button class="nav-item" data-tab="scraper">
+          <span class="material-symbols-outlined">sync</span> TTD Scraper Sync
+        </button>
+        <button class="nav-item" data-tab="notifications">
+          <span class="material-symbols-outlined">notifications_active</span> Push Broadcast
+        </button>
+        <button class="nav-item" data-tab="audit">
+          <span class="material-symbols-outlined">history</span> Audit Logs
+        </button>
+        <button class="nav-item" data-tab="test-chat">
+          <span class="material-symbols-outlined">forum</span> Test Devotional AI
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="admin-profile-pill">
+          <span class="material-symbols-outlined">shield_person</span>
+          <div class="admin-meta">
+            <strong id="logged-admin-name">Admin Officer</strong>
+            <small id="logged-admin-role">Super Admin</small>
+          </div>
+        </div>
+        <button id="btn-logout" class="btn btn-outline btn-sm">
+          <span class="material-symbols-outlined">logout</span> Logout
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+      <header class="topbar">
+        <div class="topbar-title">
+          <h1 id="page-title">Dashboard Overview</h1>
+          <p id="page-subtitle">Real-time status of TTD news indexing, AI chatbot, and devotee services.</p>
+        </div>
+
+        <div class="topbar-actions">
+          <button id="btn-quick-sync" class="btn btn-secondary">
+            <span class="material-symbols-outlined">sync</span> Sync TTD News Now
+          </button>
+          <div class="status-indicator">
+            <span class="dot live"></span> Backend Online
+          </div>
+        </div>
+      </header>
+
+      <!-- TAB: DASHBOARD OVERVIEW -->
+      <section id="tab-dashboard" class="tab-pane active">
+        <!-- STATS GRID -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon gold">
+              <span class="material-symbols-outlined">newspaper</span>
+            </div>
+            <div class="stat-info">
+              <span class="stat-label">Indexed Announcements</span>
+              <h3 id="stat-announcements">--</h3>
+              <small class="stat-sub">Across 8 categories</small>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon maroon">
+              <span class="material-symbols-outlined">verified</span>
+            </div>
+            <div class="stat-info">
+              <span class="stat-label">Verified TTD Records</span>
+              <h3 id="stat-verified">--</h3>
+              <small class="stat-sub">Strict citation enabled</small>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon orange">
+              <span class="material-symbols-outlined">alarm</span>
+            </div>
+            <div class="stat-info">
+              <span class="stat-label">Active Quota Releases</span>
+              <h3 id="stat-quotas">--</h3>
+              <small class="stat-sub">Upcoming bookings</small>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon green">
+              <span class="material-symbols-outlined">group</span>
+            </div>
+            <div class="stat-info">
+              <span class="stat-label">Active Devotee Devices</span>
+              <h3 id="stat-users">--</h3>
+              <small class="stat-sub">Registered mobile apps</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- RECENT ACTIVITY AND NOTICES -->
+        <div class="dashboard-columns">
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Latest Official TTD Announcements</h2>
+              <button class="btn btn-sm btn-outline" onclick="switchTab('announcements')">View All</button>
+            </div>
+            <div class="panel-body">
+              <div id="dashboard-recent-list" class="recent-list">
+                <div class="loading-state">Loading announcements...</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Official Integration Health</h2>
+            </div>
+            <div class="panel-body">
+              <div class="integration-item">
+                <span class="material-symbols-outlined success-icon">check_circle</span>
+                <div class="integration-meta">
+                  <strong>news.tirumala.org (Press Releases)</strong>
+                  <p>RSS Feed Connected & Polled every 2 hours</p>
+                </div>
+                <span class="badge badge-green">Healthy</span>
+              </div>
+
+              <div class="integration-item">
+                <span class="material-symbols-outlined success-icon">check_circle</span>
+                <div class="integration-meta">
+                  <strong>ttdevasthanams.ap.gov.in (Booking Portal)</strong>
+                  <p>Booking Quotas and Public Notices Verified</p>
+                </div>
+                <span class="badge badge-green">Healthy</span>
+              </div>
+
+              <div class="integration-item">
+                <span class="material-symbols-outlined success-icon">check_circle</span>
+                <div class="integration-meta">
+                  <strong>AI RAG Knowledge Engine</strong>
+                  <p>Telugu & English Hybrid Semantic Vector Store</p>
+                </div>
+                <span class="badge badge-gold">Active</span>
+              </div>
+
+              <div class="disclaimer-box">
+                <strong>Independent Devotional Assistant Notice</strong>
+                <p>All data presented is retrieved from official TTD channels without bypassing any access controls. Never store devotee payment or booking credentials.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: ANNOUNCEMENTS MANAGEMENT -->
+      <section id="tab-announcements" class="tab-pane">
+        <div class="section-toolbar">
+          <div class="search-box">
+            <span class="material-symbols-outlined">search</span>
+            <input type="text" id="announcement-search" placeholder="Search title or content (English / Telugu)...">
+          </div>
+          <button id="btn-add-announcement" class="btn btn-primary">
+            <span class="material-symbols-outlined">add</span> New Announcement
+          </button>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Title (English & Telugu)</th>
+                <th>Category</th>
+                <th>Source Link</th>
+                <th>Publication Date</th>
+                <th>Quota Alert</th>
+                <th>Verified</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="announcements-table-body">
+              <tr><td colspan="7" class="loading-state">Loading announcements...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB: SCRAPER SYNC -->
+      <section id="tab-scraper" class="tab-pane">
+        <div class="panel">
+          <div class="panel-header">
+            <h2>Automated TTD News Scraper & Ingestion Engine</h2>
+            <button id="btn-trigger-scraper" class="btn btn-primary">
+              <span class="material-symbols-outlined">cloud_download</span> Run Manual Ingestion Now
+            </button>
+          </div>
+          <div class="panel-body">
+            <p>The crawler automatically reads official TTD WordPress feeds (<code>https://news.tirumala.org/feed/</code>) and official public notices every 1–6 hours. Deduplication is performed through SHA256 hashes of the source URL and title.</p>
+            <div id="scraper-status-banner" class="status-banner info">
+              <span class="material-symbols-outlined">info</span>
+              <div>
+                <strong>Scheduled Ingestion Status:</strong> Active (Runs every 2 hours)
+                <div id="scraper-last-run">Last run: Ready for execution.</div>
+              </div>
+            </div>
+            <div id="scraper-result-log" class="console-box">
+[SYSTEM] Scraper module initialized.
+[SYSTEM] Sources: https://news.tirumala.org/ | https://ttdevasthanams.ap.gov.in/
+Click "Run Manual Ingestion Now" to trigger a live check.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: NOTIFICATIONS BROADCAST -->
+      <section id="tab-notifications" class="tab-pane">
+        <div class="panel">
+          <div class="panel-header">
+            <h2>Broadcast Push Alert to Devotees</h2>
+          </div>
+          <div class="panel-body">
+            <form id="notification-form">
+              <div class="form-row">
+                <div class="input-group">
+                  <label>English Title</label>
+                  <input type="text" id="notif-title-en" placeholder="e.g. ₹300 Special Entry Darshan Quota Released!" required>
+                </div>
+                <div class="input-group">
+                  <label>Telugu Title (శీర్షిక)</label>
+                  <input type="text" id="notif-title-te" placeholder="e.g. ₹300 ప్రత్యేక ప్రవేశ దర్శనం కోటా విడుదలైంది!" required>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="input-group">
+                  <label>English Body Text</label>
+                  <textarea id="notif-body-en" rows="3" placeholder="Detailed notification in English..." required></textarea>
+                </div>
+                <div class="input-group">
+                  <label>Telugu Body Text (సందేశం)</label>
+                  <textarea id="notif-body-te" rows="3" placeholder="వివరణాత్మక సందేశం తెలుగులో..." required></textarea>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="input-group">
+                  <label>Alert Type</label>
+                  <select id="notif-type">
+                    <option value="quota_alert">Quota Release Alert (High Priority)</option>
+                    <option value="daily_digest">Daily Tirumala Digest (8:00 AM IST)</option>
+                    <option value="breaking">Breaking Devotee Notice</option>
+                  </select>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary">
+                <span class="material-symbols-outlined">send</span> Send Push Broadcast
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top: 24px;">
+          <div class="panel-header">
+            <h2>Recent Notification Broadcast History</h2>
+          </div>
+          <div class="panel-body">
+            <div id="notification-history-list" class="recent-list">
+              <div class="loading-state">Loading history...</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: AUDIT LOGS -->
+      <section id="tab-audit" class="tab-pane">
+        <div class="panel">
+          <div class="panel-header">
+            <h2>Administrative Audit Trail</h2>
+          </div>
+          <div class="panel-body">
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Timestamp (UTC)</th>
+                    <th>Action</th>
+                    <th>Entity Type</th>
+                    <th>Target ID</th>
+                    <th>Details</th>
+                  </tr>
+                </thead>
+                <tbody id="audit-table-body">
+                  <tr><td colspan="5" class="loading-state">Loading audit logs...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: TEST DEVOTIONAL AI CHATBOT -->
+      <section id="tab-test-chat" class="tab-pane">
+        <div class="chat-tester-container">
+          <div class="chat-tester-header">
+            <span class="material-symbols-outlined">psychology</span>
+            <div>
+              <h3>Interactive Srivari AI RAG Tester</h3>
+              <p>Test Telugu and English answers, citations, and anti-hallucination guardrails.</p>
+            </div>
+          </div>
+          <div id="test-chat-messages" class="chat-tester-body">
+            <div class="chat-bubble bot">
+              <div class="sender-name">Srivari AI (శ్రీవారి AI)</div>
+              <p>ఓం నమో వేంకటేశాయ! I am ready to answer devotee questions with verified official TTD facts.</p>
+            </div>
+          </div>
+          <form id="test-chat-form" class="chat-tester-input">
+            <input type="text" id="test-chat-input" placeholder="Ask a question in English or Telugu (e.g. ₹300 దర్శనం ఎలా బుక్ చేసుకోవాలి?)..." required>
+            <button type="submit" class="btn btn-primary">
+              <span class="material-symbols-outlined">send</span>
+            </button>
+          </form>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ANNOUNCEMENT MODAL -->
+  <div id="announcement-modal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modal-title">New Official Announcement</h3>
+        <button class="btn-close" onclick="closeModal()">&times;</button>
+      </div>
+      <form id="announcement-form">
+        <input type="hidden" id="modal-announcement-id">
+
+        <div class="form-row">
+          <div class="input-group">
+            <label>Title (English)</label>
+            <input type="text" id="modal-title-en" required>
+          </div>
+          <div class="input-group">
+            <label>Title (Telugu - శీర్షిక)</label>
+            <input type="text" id="modal-title-te" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="input-group">
+            <label>Full Content (English)</label>
+            <textarea id="modal-content-en" rows="4" required></textarea>
+          </div>
+          <div class="input-group">
+            <label>Full Content (Telugu - పూర్తి వివరణ)</label>
+            <textarea id="modal-content-te" rows="4" required></textarea>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="input-group">
+            <label>Official Source URL</label>
+            <input type="url" id="modal-source-url" value="https://news.tirumala.org/" required>
+          </div>
+          <div class="input-group">
+            <label>Category</label>
+            <select id="modal-category" required></select>
+          </div>
+        </div>
+
+        <div class="form-row checkbox-row">
+          <label>
+            <input type="checkbox" id="modal-is-quota"> Is Quota Release Alert
+          </label>
+          <label>
+            <input type="checkbox" id="modal-is-verified" checked> Verified Official TTD Record
+          </label>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline" onclick="closeModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Announcement</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
+

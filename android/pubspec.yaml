@@ -1,0 +1,52 @@
+name: srivari_ai
+description: "Srivari AI (శ్రీవారి AI) - Intelligent Tirumala Devotee Assistant"
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  
+  # State Management & Architecture
+  provider: ^6.1.2
+  
+  # Networking & HTTP
+  http: ^1.2.1
+  
+  # Local Storage & Preferences
+  shared_preferences: ^2.2.3
+  
+  # UI & Devotional Design
+  google_fonts: ^6.2.1
+  flutter_svg: ^2.0.10+1
+  intl: ^0.19.0
+  cached_network_image: ^3.3.1
+  shimmer: ^3.0.0
+  url_launcher: ^6.2.6
+  share_plus: ^9.0.0
+  
+  # Speech & Voice (Telugu and English)
+  flutter_tts: ^4.0.2
+  speech_to_text: ^6.6.1
+  
+  # Push Notifications
+  flutter_local_notifications: ^17.1.2
+  firebase_core: ^2.30.1
+  firebase_messaging: ^14.8.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/icons/
+
