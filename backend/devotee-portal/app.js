@@ -185,11 +185,19 @@ function updateGuidesUI() {
 function submitSpecificQuery(queryText) {
   chatInput.value = queryText;
   handleSendMessage();
-  // Scroll chat card into focus on mobile
-  const chatCard = document.querySelector('.chat-card');
-  if (chatCard && window.innerWidth <= 768) {
-    chatCard.scrollIntoView({ behavior: 'smooth' });
+
+  // On mobile viewports (< 900px) where the sidebar stacks below the chat,
+  // smoothly scroll back up to the chat assistant container and focus the chat log/input
+  const chatSection = document.querySelector('.chat-card') || document.querySelector('section.chat-card');
+  if (chatSection && window.innerWidth < 900) {
+    chatSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
+
+  setTimeout(() => {
+    if (chatInput) {
+      chatInput.focus({ preventScroll: true });
+    }
+  }, 250);
 }
 
 // Append a message to chat window
@@ -378,12 +386,12 @@ function renderAnnouncementsFallback() {
   }
 }
 
-// Load Official Announcements (with 10-second timeout & AbortController)
+// Load Official Announcements (with 8-second timeout & AbortController)
 async function loadAnnouncements() {
   renderAnnouncementsSkeleton();
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000);
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
 
   try {
     const res = await fetch(`${API_BASE}/announcements?limit=6`, {
@@ -426,6 +434,7 @@ async function loadAnnouncements() {
       announcementsList.appendChild(item);
     });
   } catch (err) {
+    clearTimeout(timeoutId);
     console.warn("Announcements fetch warning/timeout:", err);
     renderAnnouncementsFallback();
   }

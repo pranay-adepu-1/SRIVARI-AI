@@ -79,7 +79,8 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .nav-brand {
@@ -115,6 +116,7 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 /* BILINGUAL SWITCHER */
@@ -276,6 +278,65 @@ body {
 @media (max-width: 900px) {
   .content-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .navbar {
+    padding: 0.6rem 0.8rem;
+  }
+  .nav-container {
+    justify-content: center;
+    gap: 10px;
+  }
+  .nav-brand {
+    gap: 8px;
+    justify-content: center;
+    text-align: center;
+    width: 100%;
+  }
+  .brand-text h1 {
+    font-size: 1.15rem;
+  }
+  .brand-text small {
+    font-size: 0.7rem;
+  }
+  .nav-actions {
+    width: 100%;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn-gold {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+  }
+  .lang-toggle-btn {
+    padding: 3px 5px;
+    font-size: 0.78rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .navbar {
+    padding: 0.5rem;
+  }
+  .brand-text h1 {
+    font-size: 1.05rem;
+  }
+  .tilak-icon {
+    font-size: 1.25rem;
+  }
+  .btn-gold {
+    font-size: 0.74rem;
+    padding: 5px 9px;
+    gap: 5px;
+  }
+  .lang-segment {
+    padding: 3px 7px;
+    font-size: 0.72rem;
+  }
+  .nav-container {
+    gap: 6px;
   }
 }
 
