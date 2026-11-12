@@ -11,8 +11,11 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+# Python build/dist (explicit backend paths)
+backend/lib/
+backend/lib64/
+!android/lib/
+!android/lib/**
 parts/
 sdist/
 var/
