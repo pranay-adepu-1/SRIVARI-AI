@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: srivari-ai-backend
+    runtime: python
+    region: singapore
+    plan: free
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/v1/system/health
+    envVars:
+      - key: APP_NAME
+        value: Srivari AI (శ్రీవారి AI)
+      - key: APP_ENV
+        value: production
+      - key: DEBUG
+        value: "false"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: AI_PROVIDER
+        value: local
+      - key: ADMIN_USERNAME
+        value: admin@tirumala.org
+      - key: ADMIN_PASSWORD
+        value: SrivariAdmin2026!
+      - key: ADMIN_FULL_NAME
+        value: Srivari Admin Officer
+      - key: SCRAPER_INTERVAL_HOURS
+        value: "2"
+      - key: PYTHON_VERSION
+        value: 3.11.9

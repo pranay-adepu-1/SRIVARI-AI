@@ -88,8 +88,14 @@ app.include_router(admin_router, prefix=api_prefix)
 app.include_router(system_router, prefix=api_prefix)
 
 # Mount Admin Dashboard UI
-admin_dir = Path(__file__).resolve().parent.parent.parent / "admin"
-if admin_dir.exists():
+admin_dirs = [
+    Path(__file__).resolve().parent.parent.parent / "admin",
+    Path(__file__).resolve().parent.parent / "admin",
+    Path.cwd() / "admin",
+    Path.cwd() / ".." / "admin"
+]
+admin_dir = next((d for d in admin_dirs if d.exists()), None)
+if admin_dir:
     app.mount("/admin-ui", StaticFiles(directory=str(admin_dir), html=True), name="admin_ui")
 
 @app.get("/")
