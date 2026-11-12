@@ -67,9 +67,12 @@ class ChatService:
         session.updated_at = datetime.utcnow()
         self.db.commit()
 
+        ans = rag_output["answer"]
         return {
             "session_id": session.id,
-            "answer": rag_output["answer"],
+            "answer": ans,
+            "reply": ans,
+            "response": ans,
             "language": rag_output["language"],
             "is_verified": rag_output["is_verified"],
             "citations": rag_output["citations"],

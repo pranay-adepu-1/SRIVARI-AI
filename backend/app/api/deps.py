@@ -1,3 +1,5 @@
+import uuid
+from datetime import datetime
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
@@ -27,16 +29,46 @@ def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db)
 ) -> User:
-    if not credentials:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication token required")
-    token = credentials.credentials
-    payload = decode_access_token(token)
-    if not payload:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired authentication token")
-    user_id = payload.get("sub")
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+    """
+    Retrieves current devotee user from JWT bearer token.
+    If token is valid but user was lost (e.g. SQLite database reset on Render),
+    or if no credentials are provided, auto-provisions a guest devotee profile
+    to ensure seamless public access without 401 failures.
+    """
+    if credentials:
+        token = credentials.credentials
+        payload = decode_access_token(token)
+        if payload:
+            user_id = payload.get("sub")
+            if user_id:
+                user = db.query(User).filter(User.id == user_id).first()
+                if user:
+                    return user
+                # Recreate user with preserved ID from token
+                user = User(
+                    id=user_id,
+                    device_id=payload.get("device_id", f"web_{user_id[:8]}"),
+                    preferred_language="te",
+                    created_at=datetime.utcnow(),
+                    last_active_at=datetime.utcnow()
+                )
+                db.add(user)
+                db.commit()
+                db.refresh(user)
+                return user
+
+    # Auto-provision guest devotee session
+    guest_id = str(uuid.uuid4())
+    user = User(
+        id=guest_id,
+        device_id=f"web_guest_{guest_id[:8]}",
+        preferred_language="te",
+        created_at=datetime.utcnow(),
+        last_active_at=datetime.utcnow()
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
     return user
 
 def get_current_admin(

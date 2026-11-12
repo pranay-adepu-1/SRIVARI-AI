@@ -2,6 +2,7 @@
 let currentLanguage = localStorage.getItem('srivari_lang') || 'en';
 let devoteeToken = localStorage.getItem('srivari_devotee_token') || null;
 let currentSessionId = localStorage.getItem('srivari_session_id') || null;
+let isSubmitting = false;
 
 const API_BASE = window.location.origin + '/api/v1';
 
@@ -121,6 +122,23 @@ const translations = {
   }
 };
 
+// UI Submission Lock (prevents duplicate triggers)
+function setSubmittingState(submitting) {
+  isSubmitting = submitting;
+  if (btnSend) {
+    btnSend.disabled = submitting;
+    btnSend.style.opacity = submitting ? '0.6' : '1';
+  }
+  if (chatInput) {
+    chatInput.disabled = submitting;
+  }
+  document.querySelectorAll('.guide-card-btn, .chip-btn').forEach(btn => {
+    btn.disabled = submitting;
+    btn.style.pointerEvents = submitting ? 'none' : 'auto';
+    btn.style.opacity = submitting ? '0.6' : '1';
+  });
+}
+
 // Initialize devotee session
 async function initDevotee() {
   if (devoteeToken) return devoteeToken;
@@ -140,14 +158,17 @@ async function initDevotee() {
       devoteeToken = data.access_token;
       localStorage.setItem('srivari_devotee_token', devoteeToken);
       return devoteeToken;
+    } else {
+      const errText = await res.text();
+      console.warn(`[Srivari AI Auth] Devotee init returned ${res.status}:`, errText);
     }
   } catch (err) {
-    console.warn("Devotee init error:", err);
+    console.warn("[Srivari AI Auth] Devotee init network error:", err);
   }
   return null;
 }
 
-// Render Quick Prompt Chips
+// Render Quick Prompt Chips (NO inline onclick; handled via container delegation)
 function renderQuickChips() {
   const container = document.getElementById('quick-chips');
   if (!container) return;
@@ -160,7 +181,6 @@ function renderQuickChips() {
     chipBtn.className = 'chip-btn';
     chipBtn.textContent = chipData.text;
     chipBtn.setAttribute('data-query', chipData.query);
-    chipBtn.onclick = () => submitSpecificQuery(chipData.query);
     container.appendChild(chipBtn);
   });
 }
@@ -181,23 +201,17 @@ function updateGuidesUI() {
   });
 }
 
-// Submit a specific query directly to AI assistant
+// Submit a specific query directly to AI assistant with submission lock
 function submitSpecificQuery(queryText) {
+  if (isSubmitting || !queryText) return;
   chatInput.value = queryText;
   handleSendMessage();
 
-  // On mobile viewports (< 900px) where the sidebar stacks below the chat,
-  // smoothly scroll back up to the chat assistant container and focus the chat log/input
+  // On mobile viewports (< 900px), smoothly scroll back up to the chat assistant container
   const chatSection = document.querySelector('.chat-card') || document.querySelector('section.chat-card');
   if (chatSection && window.innerWidth < 900) {
     chatSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
-
-  setTimeout(() => {
-    if (chatInput) {
-      chatInput.focus({ preventScroll: true });
-    }
-  }, 250);
 }
 
 // Append a message to chat window
@@ -235,7 +249,7 @@ function appendMessage(sender, text, citations = [], suggestedQuestions = []) {
   chatMessages.appendChild(msgDiv);
   chatMessages.scrollTop = chatMessages.scrollHeight;
 
-  // Render suggested questions if returned
+  // Render suggested questions into chips container without attaching duplicate event listeners
   if (suggestedQuestions && suggestedQuestions.length > 0) {
     const container = document.getElementById('quick-chips');
     if (container) {
@@ -245,7 +259,7 @@ function appendMessage(sender, text, citations = [], suggestedQuestions = []) {
         chipBtn.type = 'button';
         chipBtn.className = 'chip-btn';
         chipBtn.textContent = q;
-        chipBtn.onclick = () => submitSpecificQuery(q);
+        chipBtn.setAttribute('data-query', q);
         container.appendChild(chipBtn);
       });
     }
@@ -293,50 +307,76 @@ function removeTyping() {
   if (typing) typing.remove();
 }
 
-// Send Message Handler
+// Send Message Handler with strict `isSubmitting` lock
 async function handleSendMessage() {
+  if (isSubmitting) return;
+
   const text = chatInput.value.trim();
   if (!text) return;
 
+  setSubmittingState(true);
   appendMessage('user', text);
   chatInput.value = '';
   showTyping();
 
-  const token = await initDevotee();
-
   try {
+    const token = await initDevotee();
     const headers = { 'Content-Type': 'application/json' };
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
+    const payload = {
+      query: text,
+      session_id: currentSessionId,
+      language: currentLanguage
+    };
+
     const res = await fetch(`${API_BASE}/chat/query`, {
       method: 'POST',
       headers: headers,
-      body: JSON.stringify({
-        query: text,
-        session_id: currentSessionId,
-        language: currentLanguage
-      })
+      body: JSON.stringify(payload)
     });
-
-    removeTyping();
 
     if (res.ok) {
       const data = await res.json();
       currentSessionId = data.session_id;
       localStorage.setItem('srivari_session_id', currentSessionId);
-      appendMessage('assistant', data.answer, data.citations, data.suggested_questions);
+      const answer = data.answer || data.reply || data.response || "";
+      appendMessage('assistant', answer, data.citations, data.suggested_questions);
     } else {
+      let errorDetail = "";
+      try {
+        const errJson = await res.json();
+        errorDetail = errJson.detail || JSON.stringify(errJson);
+      } catch (_) {
+        errorDetail = await res.text();
+      }
+      console.error(`[Srivari AI Chat Error] Status ${res.status}:`, errorDetail);
+
+      // If token was rejected with 401/403, reset stored credentials so next call automatically recovers
+      if (res.status === 401 || res.status === 403) {
+        localStorage.removeItem('srivari_devotee_token');
+        localStorage.removeItem('srivari_session_id');
+        devoteeToken = null;
+        currentSessionId = null;
+      }
+
       appendMessage('assistant', currentLanguage === 'te' 
         ? "క్షమించండి, టీటీడీ సమాచారాన్ని పొందడంలో తాత్కాలిక సమస్య ఏర్పడింది. దయచేసి కాసేపటి తర్వాత మళ్ళీ ప్రయత్నించండి లేదా అధికారిక పోర్టల్ https://ttdevasthanams.ap.gov.in/ ని చూడండి."
         : "We encountered an issue retrieving verified temple details. Please try again or visit official TTD portal https://ttdevasthanams.ap.gov.in/.");
     }
   } catch (err) {
-    removeTyping();
+    console.error("[Srivari AI Network/Fetch Exception]:", err);
     appendMessage('assistant', currentLanguage === 'te'
       ? "నెట్‌వర్క్ కనెక్షన్ లోపం. దయచేసి మీ ఇంటర్నెట్ కనెక్షన్‌ని పరిశీలించండి."
       : "Network connection error. Please verify your connection or try again shortly.");
+  } finally {
+    removeTyping();
+    setSubmittingState(false);
+    if (chatInput) {
+      chatInput.focus();
+    }
   }
 }
 
@@ -435,7 +475,7 @@ async function loadAnnouncements() {
     });
   } catch (err) {
     clearTimeout(timeoutId);
-    console.warn("Announcements fetch warning/timeout:", err);
+    console.warn("[Srivari AI Announcements] Fetch warning/timeout:", err);
     renderAnnouncementsFallback();
   }
 }
@@ -482,7 +522,7 @@ function setLanguage(lang) {
   loadAnnouncements();
 }
 
-// Event Listeners Initialization
+// Event Listeners Initialization (Bound strictly ONCE using event delegation)
 document.addEventListener('DOMContentLoaded', async () => {
   setLanguage(currentLanguage);
   initDevotee();
@@ -498,22 +538,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     handleSendMessage();
   });
 
-  // Static & Dynamic Quick Prompt Chips
-  document.querySelectorAll('.chip-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const query = btn.getAttribute('data-query');
-      if (query) submitSpecificQuery(query);
-    });
-  });
-
-  // Interactive Quick Pilgrimage Guides Buttons
-  document.querySelectorAll('.guide-card-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const guideKey = btn.getAttribute('data-guide');
-      const t = translations[currentLanguage] || translations.en;
-      if (t.guides[guideKey]) {
-        submitSpecificQuery(t.guides[guideKey].query);
+  // Event Delegation for Quick Prompt Chips (Guarantees single binding, zero duplicates)
+  const quickChipsContainer = document.getElementById('quick-chips');
+  if (quickChipsContainer) {
+    quickChipsContainer.addEventListener('click', (e) => {
+      const chipBtn = e.target.closest('.chip-btn');
+      if (chipBtn && !isSubmitting) {
+        const query = chipBtn.getAttribute('data-query');
+        if (query) submitSpecificQuery(query);
       }
     });
-  });
+  }
+
+  // Event Delegation for Interactive Quick Pilgrimage Guides (Guarantees single binding, zero duplicates)
+  const guidesContainer = document.querySelector('.guides-grid');
+  if (guidesContainer) {
+    guidesContainer.addEventListener('click', (e) => {
+      const guideBtn = e.target.closest('.guide-card-btn');
+      if (guideBtn && !isSubmitting) {
+        const guideKey = guideBtn.getAttribute('data-guide');
+        const t = translations[currentLanguage] || translations.en;
+        if (t.guides[guideKey]) {
+          submitSpecificQuery(t.guides[guideKey].query);
+        }
+      }
+    });
+  }
 });

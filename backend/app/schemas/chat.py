@@ -17,6 +17,8 @@ class ChatQueryRequest(BaseModel):
 class ChatQueryResponse(BaseModel):
     session_id: str
     answer: str
+    reply: Optional[str] = None
+    response: Optional[str] = None
     language: str
     is_verified: bool
     citations: List[CitationItem] = []
