@@ -134,7 +134,10 @@ if devotee_dir:
 def root(request: Request):
     accept = request.headers.get("accept", "")
     if "text/html" in accept and devotee_dir and (devotee_dir / "index.html").exists():
-        return FileResponse(str(devotee_dir / "index.html"))
+        return FileResponse(
+            str(devotee_dir / "index.html"),
+            headers={"Cache-Control": "no-cache, no-store, must-revalidate"}
+        )
 
     resp = {
         "app": "Srivari AI (శ్రీవారి AI)",

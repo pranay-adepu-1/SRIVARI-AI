@@ -332,11 +332,30 @@ async function handleSendMessage() {
       language: currentLanguage
     };
 
-    const res = await fetch(`${API_BASE}/chat/query`, {
+    let res = await fetch(`${API_BASE}/chat/query`, {
       method: 'POST',
       headers: headers,
       body: JSON.stringify(payload)
     });
+
+    // Auto-recovery: if rejected with 401/403 or stale session, purge invalid credentials and transparently retry
+    if (!res.ok && (res.status === 401 || res.status === 403 || res.status === 422)) {
+      console.warn(`[Srivari AI Auth] Stale token or session rejected (${res.status}). Purging credentials and auto-retrying...`);
+      localStorage.removeItem('srivari_devotee_token');
+      localStorage.removeItem('srivari_session_id');
+      devoteeToken = null;
+      currentSessionId = null;
+
+      // Re-fetch cleanly with no stale token
+      res = await fetch(`${API_BASE}/chat/query`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: text,
+          language: currentLanguage
+        })
+      });
+    }
 
     if (res.ok) {
       const data = await res.json();
