@@ -7,7 +7,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 class Settings:
     APP_NAME: str = os.getenv("APP_NAME", "Srivari AI (శ్రీవారి AI)")
-    APP_ENV: str = os.getenv("APP_ENV", "development")
+    APP_ENV: str = os.getenv("APP_ENV", os.getenv("APP", "development"))
     DEBUG: bool = os.getenv("DEBUG", "True").lower() in ("true", "1")
     HOST: str = os.getenv("HOST", "0.0.0.0")
     PORT: int = int(os.getenv("PORT", "8000"))
